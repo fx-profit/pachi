@@ -19,7 +19,7 @@
             --negative: #e74c3c; 
             --positive: #27ae60; 
             --dark: #2c3e50; 
-            --header-bg: #E77E2E; 
+            --header-bg: #008080; 
         }
         
         body { 
@@ -38,7 +38,7 @@
         
         header { 
             width: 100%; 
-            background: linear-gradient(to bottom, #602311 0%, #602311 40%, #E77E2E 40%, #E77E2E 100%);
+            background: linear-gradient(to bottom, #004d40 0%, #004d40 40%, #008080 40%, #008080 100%);
             color: white; 
             padding-top: calc(env(safe-area-inset-top, 20px) + 50px); 
             padding-bottom: 15px; 
@@ -162,60 +162,7 @@
 
 
 
-/* --- カスタムテンキーのスタイル --- */
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-.keypad-container {
-    display: none;
-    position: fixed;
-    bottom: 0; left: 0; width: 100%;
-    background: #f1f3f4;
-    padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 8px) 16px;
-    box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
-    z-index: 2000;
-    box-sizing: border-box;
-    animation: slideUp 0.2s ease-out;
-}
-
-.keypad-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    max-width: 500px;
-    margin: 0 auto;
-}
-
-.keypad-grid button {
-    height: 50px;
-    font-size: 1.4rem;
-    font-weight: 400;
-    border: none;
-    border-radius: 8px;
-    background: #fff;
-    color: #3c4043;
-    box-shadow: 0 1px 2px rgba(60,64,67,0.3); 
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-}
-
-.keypad-grid button:active {
-    background: #dee1e5;
-}
-
-.btn-gray {
-    background: #dadce0 !important;
-    font-size: 1rem !important;
-}
- 
-       .btn-orange { background: #ff9f0a !important; color: white !important; }
-        .keypad-header {
-            display: flex;
-            justify-content: center;
-            padding-bottom: 8px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .done-link { color: #999999; transform: scaleX(2); font-weight: bold; font-size: 0.8rem; cursor: pointer; padding: 5px 30px; }
     </style>
 </head>
 <body>
@@ -260,12 +207,12 @@
 
             <div class="input-row">
                 <label>回収額</label>
-                <input type="text" id="recoveryInput" placeholder="0" onclick="openKeypad('recoveryInput')">
+                <input type="text" id="recoveryInput" inputmode="numeric" placeholder="0" oninput="autoCalcBalance()">
             </div>
 
             <div class="input-row">
                 <label>投資額</label>
-                <input type="text" id="investInput" placeholder="0" onclick="openKeypad('investInput')">
+                <input type="text" id="investInput" inputmode="numeric" placeholder="0" oninput="autoCalcBalance()">
             </div>
 
             <!-- ⑦リアルタイム収支表示 -->
@@ -281,27 +228,7 @@
         </div>
     </div>
 
-    <div id="customKeypad" class="keypad-container">
-        <div class="keypad-header">
-            <div class="done-link" onclick="closeKeypad()">∨</div>
-        </div>
-        <div class="keypad-grid">
-            <button onclick="kpInput('1')">1</button>
-            <button onclick="kpInput('2')">2</button>
-            <button onclick="kpInput('3')">3</button>
-            <button onclick="kpInput('4')">4</button>
-            <button onclick="kpInput('5')">5</button>
-            <button onclick="kpInput('6')">6</button>
-            <button onclick="kpInput('7')">7</button>
-            <button onclick="kpInput('8')">8</button>
-            <button onclick="kpInput('9')">9</button>
-            <button class="btn-gray" onclick="kpToggleMinus()">＋－</button>
-            <button onclick="kpInput('0')">0</button>
-            <button onclick="kpInput('00')">00</button>
-            <button onclick="kpInput('.')">.</button>
-            <button class="btn-gray" style="grid-column: span 2;" onclick="kpDelete()">←BackSpace</button>
-        </div>
-    </div>
+
 
     <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
         <div class="modal-content" style="max-width: 500px;">
@@ -331,60 +258,7 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
         let myChart = null;
         let cumChartInstance = null;
 
-        // --- PC/スマホ判定とテンキー制御 ---
-        let activeInputId = null;
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-        function openKeypad(id) {
-            if (isTouchDevice) {
-                activeInputId = id;
-                const input = document.getElementById(id);
-                input.readOnly = true;
-                document.getElementById('customKeypad').style.display = 'block';
-                input.focus();
-            } else {
-                const input = document.getElementById(id);
-                input.readOnly = false;
-                closeKeypad();
-            }
-        }
-
-        function closeKeypad() {
-            document.getElementById('customKeypad').style.display = 'none';
-            activeInputId = null;
-        }
-
-        function kpInput(val) {
-            if(!activeInputId) return;
-            const input = document.getElementById(activeInputId);
-            if(val === '.' && input.value.includes('.')) return;
-            input.value += val;
-            autoCalcBalance();
-        }
-
-        function kpDelete() {
-            if(!activeInputId) return;
-            const input = document.getElementById(activeInputId);
-            input.value = input.value.slice(0, -1);
-            autoCalcBalance();
-        }
-
-        function kpToggleMinus() {
-            if(!activeInputId) return;
-            const input = document.getElementById(activeInputId);
-            if (input.value.startsWith('-')) {
-                input.value = input.value.substring(1);
-            } else {
-                if(input.value !== "") {
-                    input.value = '-' + input.value;
-                } else {
-                    input.value = '-';
-                }
-            }
-            autoCalcBalance();
-        }
-
-        // ⑦ リアルタイム収支計算（回収額 - 投資額）
+        // リアルタイム収支計算（回収額 - 投資額）
         function autoCalcBalance() {
             const recovery = parseInt(document.getElementById('recoveryInput').value) || 0;
             const invest = parseInt(document.getElementById('investInput').value) || 0;
@@ -530,7 +404,6 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
 
         function closeModal() { 
             document.getElementById('modal').style.display = 'none'; 
-            closeKeypad();
         }
 
         // 月別サマリーキャッシュ
