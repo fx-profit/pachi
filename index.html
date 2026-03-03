@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>パチンコ収支</title>
+    <meta name="author" content="Hiroro">
+    <title>パチンコ収支管理</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -15,23 +16,27 @@
             --negative: #e74c3c; 
             --positive: #27ae60; 
             --dark: #2c3e50; 
-            --header-bg: #d35400; /* パチンコ風のオレンジ系 */
+            --header-bg: #d35400; /* パチンコ向けに暖色系へ */
         }
         
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background-color: var(--main-bg); 
             color: #333; 
-            margin: 0; padding: 0; 
-            display: flex; flex-direction: column; align-items: center; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
             -webkit-tap-highlight-color: transparent; 
+            overflow-x: hidden;
         }
         
         header { 
             width: 100%; 
-            background: var(--header-bg);
+            background: linear-gradient(to bottom, #a04000 0%, #a04000 40%, var(--header-bg) 40%, var(--header-bg) 100%);
             color: white; 
-            padding-top: calc(env(safe-area-inset-top, 20px) + 20px); 
+            padding-top: calc(env(safe-area-inset-top, 20px) + 50px); 
             padding-bottom: 15px; 
             text-align: center; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
@@ -39,69 +44,111 @@
         }
 
         #appTitle { 
-            font-size: 1.5rem; margin: 0; display: inline-block; padding: 2px 10px; cursor: pointer;
+            font-size: 1.2rem;
+            margin: 0; 
+            display: inline-block;
+            padding: 2px 10px;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+        }
+        
+        .container { 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 0 10px 20px 10px; 
+            box-sizing: border-box; 
         }
 
-        .container { width: 100%; max-width: 500px; padding: 0 10px 20px 10px; box-sizing: border-box; }
-
-        .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .nav-btn { background: var(--card-bg); border: none; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .calendar-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 8px; }
+        .nav-btn { background: var(--card-bg); border: none; padding: 10px 18px; border-radius: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         #calendarHeader { font-size: 1.1rem; font-weight: bold; }
 
-        .calendar-container { background: var(--card-bg); padding: 5px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); position: relative; overflow: hidden; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #eee; border: 1px solid #eee; transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+        .calendar-container { 
+            background: var(--card-bg); 
+            padding: 5px; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 500px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            box-sizing: border-box; 
+        }
+
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 1px; 
+            background-color: #eee; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            border: 1px solid #eee; 
+        }
+        
+        .is-animating { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
 
         .day-header { background: #f8f9fa; font-size: 0.7rem; font-weight: bold; padding: 6px 0; text-align: center; }
-        .day { background: white; aspect-ratio: 1 / 1.35; display: flex; flex-direction: column; padding: 2px; cursor: pointer; justify-content: flex-start; overflow: hidden; }
+        .day-header:nth-child(1) { color: var(--negative); } 
+        .day-header:nth-child(7) { color: var(--primary); } 
+
+        .day { background: white; aspect-ratio: 1 / 1.35; display: flex; flex-direction: column; padding: 2px 3px; cursor: pointer; justify-content: flex-start; overflow: hidden; box-sizing: border-box; }
         .day.other-month { background-color: #fafafa; color: #ccc; pointer-events: none; }
-        .date-num { font-size: 0.7rem; font-weight: bold; color: #7f8c8d; }
-        .day-data { text-align: right; font-size: 0.75rem; font-weight: bold; margin-top: auto; }
+        
+        .date-num { font-size: 0.7rem; font-weight: bold; color: #7f8c8d; margin-bottom: 1px; }
+        .memo-dot { width: 4px; height: 4px; background-color: #bdc3c7; border-radius: 50%; margin-left: 3px; display: inline-block; }
+
+        .data-container { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex-grow: 1; width: 100%; }
+        .day-data { text-align: right; width: 100%; font-size: 0.75rem; font-weight: bold; white-space: nowrap; }
+        
         .negative { color: var(--negative) !important; }
+        .positive { color: var(--positive) !important; }
 
-        /* ② 今月の収支のみ表示 */
-        .summary { margin-top: 12px; background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
-        .summary-label { font-size: 0.75rem; opacity: 0.8; display: block; }
-        .summary-value { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
+        .summary { margin-top: 12px; background: var(--dark); color: white; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; }
+        .summary-item { text-align: center; }
+        .summary-label { font-size: 0.8rem; opacity: 0.8; display: block; }
+        .summary-value { font-size: 1.4rem; font-weight: bold; margin-top: 4px; display: block; }
 
-        /* ③ ボタンの並び */
-        .action-group { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn { border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; text-align: center; }
-        .cum-btn { background: var(--header-bg); }
+        .action-group { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 500px; }
+        .btn { border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .graph-btn { background: var(--primary); }
         .export-btn { background: var(--positive); }
         .import-btn { background: #e67e22; }
+        .cum-btn { background: #008080; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: flex-start; z-index: 1000; padding-top: 50px; }
-        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         
-        /* ⑤⑥ 入力欄を横並びに */
-        .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .input-row label { flex: 0 0 60px; font-size: 0.9rem; font-weight: bold; color: #555; }
-        .input-row input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1.1rem; text-align: right; }
+        .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .input-row label { flex: 0 0 60px; font-size: 0.85rem; font-weight: bold; color: #666; }
+        .input-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 1.1rem; text-align: right; }
 
-        /* ⑦ 自動計算の中央表示 */
-        .calc-display { text-align: center; padding: 15px 0; margin-bottom: 10px; border-top: 1px solid #eee; }
-        .calc-label { font-size: 0.75rem; color: #888; display: block; }
-        .calc-result { font-size: 1.8rem; font-weight: bold; display: block; }
+        #calcResultDisplay { text-align: center; font-size: 1.5rem; font-weight: bold; margin: 15px 0; padding: 10px; border-radius: 10px; background: #f8f9fa; min-height: 1.5em; }
 
-        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; resize: none; }
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; font-family: inherit; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; }
         .save-btn { background: var(--primary); color: white; }
-        .cancel-btn { background: #eee; }
+        .cancel-btn { background: #eee; color: #333; }
 
-        /* カスタムテンキー */
-        .keypad-container { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #f1f3f4; padding: 10px 15px env(safe-area-inset-bottom, 10px); z-index: 2000; box-sizing: border-box; }
-        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 500px; margin: 0 auto; }
-        .keypad-grid button { height: 55px; font-size: 1.4rem; border: none; border-radius: 8px; background: #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .keypad-grid button:active { background: #ddd; }
-        .kp-header { text-align: center; padding-bottom: 10px; color: #888; cursor: pointer; font-size: 1.2rem; }
+        /* キーパッド */
+        .keypad-container { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #f1f3f4; padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 8px) 16px; z-index: 2000; box-sizing: border-box; }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 500px; margin: 0 auto; }
+        .keypad-grid button { height: 50px; font-size: 1.4rem; border: none; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); cursor: pointer; }
+        .keypad-grid button:active { background: #dee1e5; }
+        .btn-gray { background: #dadce0 !important; font-size: 1rem !important; }
+        .keypad-header { display: flex; justify-content: center; padding-bottom: 8px; }
+        .done-link { color: #999; transform: scaleX(2); cursor: pointer; padding: 5px 30px; font-weight: bold; }
+
+        .hidden { display: none !important; }
+        .cum-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem; }
+        .cum-table th, .cum-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1 id="appTitle" contenteditable="true" onblur="saveTitle()">パチンコ収支</h1>
+        <h1 id="appTitle" contenteditable="true" spellcheck="false">パチンコ収支</h1>
     </header>
 
     <div class="container">
@@ -111,18 +158,20 @@
             <button class="nav-btn" onclick="navChangeMonth(1)">▶</button>
         </div>
 
-        <div class="calendar-container">
+        <div id="calendarSwipeArea" class="calendar-container">
             <div class="calendar-grid" id="calendarGrid"></div>
         </div>
 
         <div class="summary">
-            <span class="summary-label">今月の収支合計</span>
-            <span id="totalAmount" class="summary-value">¥0</span>
+            <div class="summary-item">
+                <span class="summary-label">今月の収支</span>
+                <span id="totalAmount" class="summary-value">¥0</span>
+            </div>
         </div>
 
         <div class="action-group">
-            <button class="btn cum-btn" onclick="showCumulativeModal()">年間の累計を表示</button>
-            <button class="btn graph-btn" onclick="showGraph()">グラフを表示</button>
+            <button class="btn cum-btn" onclick="showCumulativeModal()">累計を表示</button>
+            <button class="btn graph-btn" onclick="showGraph()">グラフ表示</button>
             <button class="btn export-btn" onclick="exportCSV()">CSVファイル出力</button>
             <button class="btn import-btn" onclick="document.getElementById('importFile').click()">CSVから復元</button>
             <input type="file" id="importFile" style="display:none" accept=".csv" onchange="importCSV(this)">
@@ -131,24 +180,21 @@
 
     <div id="modal" class="modal" onclick="if(event.target==this)closeModal()">
         <div class="modal-content">
-            <h3 id="selectedDateText" style="margin-top:0; text-align:center;">記録</h3>
+            <h3 id="selectedDateText" style="margin-top:0; color:var(--header-bg); text-align:center;">記録</h3>
             
             <div class="input-row">
                 <label>回収額</label>
-                <input type="number" id="payoutInput" placeholder="0" oninput="calcRealtime()" onclick="openKeypad('payoutInput')">
+                <input type="text" id="winInput" placeholder="0" onclick="openKeypad('winInput')">
             </div>
 
             <div class="input-row">
                 <label>投資額</label>
-                <input type="number" id="investmentInput" placeholder="0" oninput="calcRealtime()" onclick="openKeypad('investmentInput')">
+                <input type="text" id="loseInput" placeholder="0" onclick="openKeypad('loseInput')">
             </div>
 
-            <div class="calc-display">
-                <span class="calc-label">当日収支</span>
-                <span id="realtimeResult" class="calc-result">¥0</span>
-            </div>
-            
-            <label style="font-size:0.8rem; color:#666;">メモ</label>
+            <div id="calcResultDisplay">¥0</div>
+
+            <label style="font-size:0.75rem; font-weight:bold; color:#666;">メモ</label>
             <textarea id="memoInput" rows="3" onfocus="closeKeypad()"></textarea>
             
             <div class="btn-group">
@@ -159,47 +205,98 @@
     </div>
 
     <div id="customKeypad" class="keypad-container">
-        <div class="kp-header" onclick="closeKeypad()">∨ 閉じる</div>
+        <div class="keypad-header">
+            <div class="done-link" onclick="closeKeypad()">∨</div>
+        </div>
         <div class="keypad-grid">
-            <button onclick="kpInput('1')">1</button><button onclick="kpInput('2')">2</button><button onclick="kpInput('3')">3</button>
-            <button onclick="kpInput('4')">4</button><button onclick="kpInput('5')">5</button><button onclick="kpInput('6')">6</button>
-            <button onclick="kpInput('7')">7</button><button onclick="kpInput('8')">8</button><button onclick="kpInput('9')">9</button>
-            <button style="background:#eee" onclick="kpInput('000')">000</button><button onclick="kpInput('0')">0</button>
-            <button style="background:#ddd" onclick="kpDelete()">BS</button>
+            <button onclick="kpInput('1')">1</button>
+            <button onclick="kpInput('2')">2</button>
+            <button onclick="kpInput('3')">3</button>
+            <button onclick="kpInput('4')">4</button>
+            <button onclick="kpInput('5')">5</button>
+            <button onclick="kpInput('6')">6</button>
+            <button onclick="kpInput('7')">7</button>
+            <button onclick="kpInput('8')">8</button>
+            <button onclick="kpInput('9')">9</button>
+            <button class="btn-gray" disabled></button>
+            <button onclick="kpInput('0')">0</button>
+            <button onclick="kpInput('00')">00</button>
+            <button class="btn-gray" style="grid-column: span 3;" onclick="kpDelete()">← BackSpace</button>
         </div>
     </div>
 
     <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
-        <div class="modal-content" style="max-width: 450px; align-items: center;">
-            <h3 style="margin-top:0; text-align:center;">年間累計</h3>
-            <table style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
-                <thead><tr style="border-bottom:2px solid #ddd;"><th>月</th><th>収支</th><th>累計</th></tr></thead>
-                <tbody id="cumTableBody"></tbody>
-            </table>
-            <canvas id="cumChart" style="margin-top:20px;"></canvas>
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">累計収支</h3>
+            <div style="max-height: 200px; overflow-y: auto;">
+                <table class="cum-table">
+                    <thead><tr><th>月</th><th>月間収支</th><th>累計収支</th></tr></thead>
+                    <tbody id="cumTableBody"></tbody>
+                </table>
+            </div>
+            <canvas id="cumChart"></canvas>
             <button class="modal-btn cancel-btn" style="width:100%; margin-top:15px;" onclick="document.getElementById('cumModal').style.display='none'">閉じる</button>
         </div>
     </div>
 
     <div id="graphModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 600px;">
             <canvas id="balanceChart"></canvas>
             <button class="modal-btn cancel-btn" style="width:100%; margin-top:15px;" onclick="document.getElementById('graphModal').style.display='none'">閉じる</button>
         </div>
     </div>
 
     <script>
-        let currentData = JSON.parse(localStorage.getItem('pachinko_data_v1')) || {};
+        let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
         let viewDate = new Date(); 
         let selectedDateKey = "";
+        let myChart = null, cumChartInstance = null;
         let activeInputId = null;
-        let myChart = null;
-        let cumChartInstance = null;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        const isTouch = 'ontouchstart' in window;
+        // タイトル保存
+        const titleEl = document.getElementById('appTitle');
+        const savedTitle = localStorage.getItem('pachi_title');
+        if (savedTitle) titleEl.innerText = savedTitle;
+        titleEl.addEventListener('blur', () => localStorage.setItem('pachi_title', titleEl.innerText));
 
-        function saveTitle() { localStorage.setItem('pachi_title', document.getElementById('appTitle').innerText); }
-        function loadTitle() { const t = localStorage.getItem('pachi_title'); if(t) document.getElementById('appTitle').innerText = t; }
+        function openKeypad(id) {
+            if (isTouchDevice) {
+                activeInputId = id;
+                document.getElementById(id).readOnly = true;
+                document.getElementById('customKeypad').style.display = 'block';
+            } else {
+                document.getElementById(id).readOnly = false;
+            }
+        }
+        function closeKeypad() { document.getElementById('customKeypad').style.display = 'none'; activeInputId = null; }
+
+        function kpInput(val) {
+            if(!activeInputId) return;
+            const input = document.getElementById(activeInputId);
+            input.value += val;
+            updateLiveCalc();
+        }
+        function kpDelete() {
+            if(!activeInputId) return;
+            const input = document.getElementById(activeInputId);
+            input.value = input.value.slice(0, -1);
+            updateLiveCalc();
+        }
+
+        function updateLiveCalc() {
+            const win = parseInt(document.getElementById('winInput').value) || 0;
+            const lose = parseInt(document.getElementById('loseInput').value) || 0;
+            const diff = win - lose;
+            const display = document.getElementById('calcResultDisplay');
+            display.innerText = (diff >= 0 ? "+" : "") + diff.toLocaleString() + "円";
+            display.className = diff < 0 ? "negative" : "positive";
+        }
+
+        function navChangeMonth(diff) {
+            viewDate.setMonth(viewDate.getMonth() + diff);
+            renderCalendar();
+        }
 
         function renderCalendar() {
             const year = viewDate.getFullYear(), month = viewDate.getMonth();
@@ -214,147 +311,103 @@
                 grid.innerHTML += '<div class="day other-month"></div>';
             }
 
+            let monthlyTotal = 0;
             for (let d = 1; d <= lastDate; d++) {
-                const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const data = currentData[dateKey];
-                let html = `<div class="day" onclick="openModal('${dateKey}')"><span class="date-num">${d}</span>`;
+                const hasMemo = data?.memo;
+                let dayHtml = `<div class="day" onclick="openModal('${dateKey}')">
+                    <span class="date-num">${d}${hasMemo ? '<span class="memo-dot"></span>' : ''}</span>
+                    <div class="data-container">`;
+                
                 if (data) {
-                    const diff = data.payout - data.investment;
-                    html += `<div class="day-data ${diff < 0 ? 'negative' : ''}">${diff.toLocaleString()}</div>`;
+                    const diff = (data.win || 0) - (data.lose || 0);
+                    if (diff !== 0) {
+                        dayHtml += `<div class="day-data ${diff < 0 ? 'negative' : 'positive'}">${diff > 0 ? '+' : ''}${Math.floor(diff/1000)}k</div>`;
+                        monthlyTotal += diff;
+                    }
                 }
-                grid.innerHTML += html + `</div>`;
+                dayHtml += `</div></div>`;
+                grid.innerHTML += dayHtml;
             }
-            updateSummary();
+            const totalEl = document.getElementById('totalAmount');
+            totalEl.innerText = `¥${monthlyTotal.toLocaleString()}`;
+            totalEl.className = `summary-value ${monthlyTotal < 0 ? 'negative' : 'positive'}`;
         }
 
         function openModal(dateKey) {
             selectedDateKey = dateKey;
+            const data = currentData[dateKey] || {win:"", lose:"", memo:""};
             const parts = dateKey.split('-');
             document.getElementById('selectedDateText').innerText = `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
-            document.getElementById('payoutInput').value = currentData[dateKey]?.payout || "";
-            document.getElementById('investmentInput').value = currentData[dateKey]?.investment || "";
-            document.getElementById('memoInput').value = currentData[dateKey]?.memo || "";
+            document.getElementById('winInput').value = data.win;
+            document.getElementById('loseInput').value = data.lose;
+            document.getElementById('memoInput').value = data.memo || "";
             document.getElementById('modal').style.display = 'flex';
-            calcRealtime();
-        }
-
-        // ⑦ リアルタイム計算表示
-        function calcRealtime() {
-            const payout = parseInt(document.getElementById('payoutInput').value) || 0;
-            const investment = parseInt(document.getElementById('investmentInput').value) || 0;
-            const res = payout - investment;
-            const el = document.getElementById('realtimeResult');
-            el.innerText = `¥${res.toLocaleString()}`;
-            el.className = `calc-result ${res < 0 ? 'negative' : ''}`;
-        }
-
-        function openKeypad(id) {
-            if (isTouch) {
-                activeInputId = id;
-                document.getElementById(id).readOnly = true;
-                document.getElementById('customKeypad').style.display = 'block';
-            }
-        }
-        function closeKeypad() { document.getElementById('customKeypad').style.display = 'none'; activeInputId = null; }
-        function kpInput(val) {
-            const input = document.getElementById(activeInputId);
-            input.value += val;
-            calcRealtime();
-        }
-        function kpDelete() {
-            const input = document.getElementById(activeInputId);
-            input.value = input.value.slice(0, -1);
-            calcRealtime();
+            updateLiveCalc();
         }
 
         function saveData() {
-            const p = parseInt(document.getElementById('payoutInput').value);
-            const i = parseInt(document.getElementById('investmentInput').value);
-            const m = document.getElementById('memoInput').value;
-            if (!p && !i && !m) {
+            const win = parseInt(document.getElementById('winInput').value);
+            const lose = parseInt(document.getElementById('loseInput').value);
+            const memo = document.getElementById('memoInput').value;
+
+            if (isNaN(win) && isNaN(lose) && !memo) {
                 delete currentData[selectedDateKey];
             } else {
-                currentData[selectedDateKey] = { payout: p || 0, investment: i || 0, memo: m || "" };
+                currentData[selectedDateKey] = { win: win || 0, lose: lose || 0, memo: memo || "" };
             }
-            localStorage.setItem('pachinko_data_v1', JSON.stringify(currentData));
+            localStorage.setItem('pachi_data', JSON.stringify(currentData));
             closeModal(); renderCalendar();
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; closeKeypad(); }
-        function navChangeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
-
-        function updateSummary() {
-            const ym = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
-            let total = 0;
-            Object.keys(currentData).forEach(k => {
-                if (k.startsWith(ym)) total += (currentData[k].payout - currentData[k].investment);
-            });
-            const aEl = document.getElementById('totalAmount');
-            aEl.innerText = `¥${total.toLocaleString()}`;
-            aEl.className = `summary-value ${total < 0 ? 'negative' : ''}`;
-        }
 
         function showCumulativeModal() {
             const targetYear = viewDate.getFullYear();
+            document.getElementById('cumModalTitle').innerText = `${targetYear}年 累計収支`;
             const tbody = document.getElementById('cumTableBody'); tbody.innerHTML = "";
             let cumulative = 0;
-            let chartData = [];
+            const labels = [], points = [];
+
             for (let m = 0; m < 12; m++) {
-                let monthSum = 0;
+                let mSum = 0;
                 const prefix = `${targetYear}-${String(m+1).padStart(2,'0')}`;
-                Object.keys(currentData).forEach(k => {
-                    if(k.startsWith(prefix)) monthSum += (currentData[k].payout - currentData[k].investment);
-                });
-                cumulative += monthSum;
-                chartData.push(cumulative);
-                tbody.innerHTML += `<tr style="border-bottom:1px solid #eee; text-align:center; height:35px;"><td>${m+1}月</td><td class="${monthSum<0?'negative':''}">${monthSum.toLocaleString()}</td><td class="${cumulative<0?'negative':''}">${cumulative.toLocaleString()}</td></tr>`;
+                Object.keys(currentData).forEach(k => { if(k.startsWith(prefix)) mSum += (currentData[k].win - currentData[k].lose); });
+                cumulative += mSum;
+                tbody.innerHTML += `<tr><td>${m+1}月</td><td class="${mSum<0?'negative':''}">${mSum.toLocaleString()}</td><td class="${cumulative<0?'negative':''}">${cumulative.toLocaleString()}</td></tr>`;
+                labels.push(`${m+1}月`); points.push(cumulative);
             }
             document.getElementById('cumModal').style.display = 'flex';
-            setTimeout(() => {
-                const ctx = document.getElementById('cumChart').getContext('2d');
-                if (cumChartInstance) cumChartInstance.destroy();
-                cumChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
-                        datasets: [{ label: '累計収支', data: chartData, borderColor: '#d35400', tension: 0.1, fill: true, backgroundColor: 'rgba(211, 84, 0, 0.1)' }]
-                    },
-                    options: { responsive: true, plugins: { legend: { display: false } } }
-                });
-            }, 100);
+            const ctx = document.getElementById('cumChart').getContext('2d');
+            if (cumChartInstance) cumChartInstance.destroy();
+            cumChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ data: points, borderColor: '#3498db', fill: false }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
         }
 
         function showGraph() {
             const year = viewDate.getFullYear(), month = viewDate.getMonth(), lastDate = new Date(year, month + 1, 0).getDate();
-            const labels = [], dataPoints = []; let cumulative = 0;
+            const labels = [], points = []; let balance = 0;
             for (let d = 1; d <= lastDate; d++) {
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                labels.push(d); 
-                cumulative += (currentData[dateKey] ? currentData[dateKey].payout - currentData[dateKey].investment : 0);
-                dataPoints.push(cumulative);
+                const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                balance += (currentData[key] ? currentData[key].win - currentData[key].lose : 0);
+                labels.push(d); points.push(balance);
             }
             document.getElementById('graphModal').style.display = 'flex';
-            setTimeout(() => {
-                const ctx = document.getElementById('balanceChart').getContext('2d');
-                if (myChart) myChart.destroy();
-                myChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: labels, datasets: [{ data: dataPoints, borderColor: '#3498db', fill: false, tension: 0.1 }] },
-                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
-                });
-            }, 100);
+            const ctx = document.getElementById('balanceChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ data: points, borderColor: '#3498db', fill: true, backgroundColor: 'rgba(52,152,219,0.1)' }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
         }
 
-        // ⑧ CSVファイル名変更
         function exportCSV() {
-            let csv = "\uFEFF日付,投資額,回収額,収支,メモ\n";
+            let csv = "\uFEFF日付,回収額,投資額,収支,メモ\n";
             Object.keys(currentData).sort().forEach(k => {
                 const d = currentData[k];
-                csv += `${k},${d.investment},${d.payout},${d.payout-d.investment},"${d.memo}"\n`;
+                csv += `${k},${d.win},${d.lose},${d.win-d.lose},"${(d.memo||"").replace(/"/g,'""')}"\n`;
             });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-            link.download = `Pachi収支_${new Date().getFullYear()}.csv`; link.click();
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `Pachi収支_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
         }
 
         function importCSV(input) {
@@ -364,19 +417,23 @@
                 const lines = e.target.result.split(/\r?\n/);
                 const newData = {};
                 for (let i = 1; i < lines.length; i++) {
-                    const cols = lines[i].split(',');
+                    const cols = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
                     if (cols.length >= 3) {
-                        newData[cols[0]] = { investment: parseInt(cols[1])||0, payout: parseInt(cols[2])||0, memo: cols[4]?.replace(/"/g,'')||"" };
+                        const date = cols[0].replace(/^\uFEFF/,"").trim();
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                            newData[date] = { win: parseInt(cols[1])||0, lose: parseInt(cols[2])||0, memo: (cols[4]||"").replace(/^"|"$/g,'') };
+                        }
                     }
                 }
-                currentData = newData;
-                localStorage.setItem('pachinko_data_v1', JSON.stringify(currentData));
-                renderCalendar();
+                if (Object.keys(newData).length > 0 && confirm("データを復元しますか？")) {
+                    currentData = newData;
+                    localStorage.setItem('pachi_data', JSON.stringify(currentData));
+                    renderCalendar();
+                }
             };
             reader.readAsText(file, "UTF-8");
         }
 
-        loadTitle();
         renderCalendar();
     </script>
 </body>
