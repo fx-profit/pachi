@@ -37,6 +37,16 @@
             margin-bottom: 10px; 
         }
 
+        /* タイトルをタップで編集可能に */
+        #appTitle {
+            margin: 0;
+            font-size: 1.5rem;
+            display: inline-block;
+            outline: none;
+            cursor: pointer;
+            padding: 2px 10px;
+        }
+
         .container { width: 100%; max-width: 500px; padding: 0 10px 20px 10px; box-sizing: border-box; }
 
         .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -64,12 +74,44 @@
         .export-btn { background: var(--positive); }
         .import-btn { background: #e67e22; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        /* モーダル：上揃えに変更 */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            justify-content: center; 
+            align-items: flex-start; /* 上揃え */
+            z-index: 1000; 
+            padding: 40px 15px 15px 15px; /* 上部に少し余白 */
+            box-sizing: border-box; 
+        }
+        .modal-content { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            width: 100%; 
+            max-width: 340px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+        }
         
         .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .input-row label { flex: 0 0 60px; font-size: 0.8rem; font-weight: bold; }
-        input, textarea { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        
+        /* メモ欄の幅と高さを調整 */
+        textarea { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            box-sizing: border-box;
+            min-height: 80px;
+            margin-bottom: 15px;
+            resize: none;
+        }
 
         .result-display { 
             background: #f8f9fa; padding: 15px; border-radius: 8px; 
@@ -83,18 +125,21 @@
         .save-btn { background: var(--primary); color: white; }
         .cancel-btn { background: #eee; }
 
-        /* カスタムテンキー */
+        /* キーパッド */
         .keypad-container { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #f1f3f4; padding: 8px 16px env(safe-area-inset-bottom, 8px) 16px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 2000; box-sizing: border-box; }
         .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 500px; margin: 0 auto; }
         .keypad-grid button { height: 50px; font-size: 1.3rem; border: none; border-radius: 8px; background: #fff; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 
+        /* 年間累計表：スクロールなし */
         .cum-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.8rem; }
         .cum-table th, .cum-table td { border: 1px solid #ddd; padding: 6px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <header><h1>パチンコ収支</h1></header>
+    <header>
+        <h1 id="appTitle" contenteditable="true" onblur="saveTitle()">パチンコ収支</h1>
+    </header>
 
     <div class="container">
         <div class="calendar-nav">
@@ -140,7 +185,7 @@
                 <span id="dailyResult" class="result-value">¥0</span>
             </div>
             
-            <textarea id="memoInput" rows="2" placeholder="メモ" onfocus="closeKeypad()"></textarea>
+            <textarea id="memoInput" placeholder="メモ" onfocus="closeKeypad()"></textarea>
             
             <div class="btn-group">
                 <button class="modal-btn save-btn" onclick="saveData()">保存</button>
@@ -163,12 +208,10 @@
     <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
         <div class="modal-content" style="max-width: 450px;">
             <h3 style="margin-top:0; text-align:center;">年間累計</h3>
-            <div style="max-height: 200px; overflow-y: auto;">
-                <table class="cum-table">
-                    <thead><tr><th>月</th><th>収支</th><th>累計</th></tr></thead>
-                    <tbody id="cumTableBody"></tbody>
-                </table>
-            </div>
+            <table class="cum-table">
+                <thead><tr><th>月</th><th>収支</th><th>累計</th></tr></thead>
+                <tbody id="cumTableBody"></tbody>
+            </table>
             <canvas id="cumChart" style="margin-top:10px;"></canvas>
             <button class="modal-btn cancel-btn" style="width:100%; margin-top:10px;" onclick="document.getElementById('cumModal').style.display='none'">閉じる</button>
         </div>
@@ -188,6 +231,16 @@
         let activeInputId = null;
         let myChart = null;
         let cumChartInstance = null;
+
+        // タイトルの保存と復元
+        function saveTitle() {
+            const title = document.getElementById('appTitle').innerText;
+            localStorage.setItem('pachinko_app_title', title);
+        }
+        function loadTitle() {
+            const savedTitle = localStorage.getItem('pachinko_app_title');
+            if(savedTitle) document.getElementById('appTitle').innerText = savedTitle;
+        }
 
         const isTouch = 'ontouchstart' in window;
 
@@ -278,16 +331,34 @@
             aEl.className = `summary-value ${total < 0 ? 'negative' : ''}`;
         }
 
+        // グラフ設定の共通オプション（データがない時に0を表示）
+        const chartOptions = {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return value.toLocaleString(); }
+                    }
+                }
+            }
+        };
+
         function showCumulativeModal() {
             const targetYear = viewDate.getFullYear();
             const tbody = document.getElementById('cumTableBody'); tbody.innerHTML = "";
             let cumulative = 0;
             let chartData = [];
+            let hasData = false;
             for (let m = 0; m < 12; m++) {
                 let monthSum = 0;
                 const prefix = `${targetYear}-${String(m+1).padStart(2,'0')}`;
                 Object.keys(currentData).forEach(k => {
-                    if(k.startsWith(prefix)) monthSum += (currentData[k].payout - currentData[k].investment);
+                    if(k.startsWith(prefix)) {
+                        monthSum += (currentData[k].payout - currentData[k].investment);
+                        hasData = true;
+                    }
                 });
                 cumulative += monthSum;
                 chartData.push(cumulative);
@@ -295,17 +366,21 @@
             }
             document.getElementById('cumModal').style.display = 'flex';
             
-            // グラフ描画
             setTimeout(() => {
                 const ctx = document.getElementById('cumChart').getContext('2d');
                 if (cumChartInstance) cumChartInstance.destroy();
+                
+                // データがない場合、目盛りを0固定にするための調整
+                let options = JSON.parse(JSON.stringify(chartOptions));
+                if(!hasData) { options.scales.y.max = 1; options.scales.y.min = -1; }
+
                 cumChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
-                        datasets: [{ label: '累計収支', data: chartData, borderColor: '#d35400', tension: 0.1, fill: true, backgroundColor: 'rgba(211, 84, 0, 0.1)' }]
+                        datasets: [{ data: chartData, borderColor: '#d35400', tension: 0.1, fill: true, backgroundColor: 'rgba(211, 84, 0, 0.1)' }]
                     },
-                    options: { responsive: true, plugins: { legend: { display: false } } }
+                    options: options
                 });
             }, 100);
         }
@@ -313,20 +388,27 @@
         function showGraph() {
             const year = viewDate.getFullYear(), month = viewDate.getMonth(), lastDate = new Date(year, month + 1, 0).getDate();
             const labels = [], dataPoints = []; let cumulative = 0;
+            let hasData = false;
             for (let d = 1; d <= lastDate; d++) {
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 labels.push(d); 
-                cumulative += (currentData[dateKey] ? currentData[dateKey].payout - currentData[dateKey].investment : 0);
+                const dailyResult = currentData[dateKey] ? currentData[dateKey].payout - currentData[dateKey].investment : 0;
+                if(currentData[dateKey]) hasData = true;
+                cumulative += dailyResult;
                 dataPoints.push(cumulative);
             }
             document.getElementById('graphModal').style.display = 'flex';
             setTimeout(() => {
                 const ctx = document.getElementById('balanceChart').getContext('2d');
                 if (myChart) myChart.destroy();
+
+                let options = JSON.parse(JSON.stringify(chartOptions));
+                if(!hasData) { options.scales.y.max = 1; options.scales.y.min = -1; }
+
                 myChart = new Chart(ctx, {
                     type: 'line',
                     data: { labels: labels, datasets: [{ data: dataPoints, borderColor: '#3498db', fill: false, tension: 0.1 }] },
-                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
+                    options: options
                 });
             }, 100);
         }
@@ -359,6 +441,7 @@
             reader.readAsText(file, "UTF-8");
         }
 
+        loadTitle();
         renderCalendar();
     </script>
 </body>
