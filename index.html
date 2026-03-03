@@ -1,182 +1,711 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>パチンコ収支</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="author" content="Hiroro">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <title>パチンコ収支</title>
+    <meta name="description" content="パチンコ専用の収支管理アプリです。日々の収支を記録・管理できます">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { 
+            --main-bg: #f0f2f5; 
+            --card-bg: #ffffff; 
+            --primary: #3498db; 
+            --negative: #e74c3c; 
+            --positive: #27ae60; 
+            --dark: #2c3e50; 
+            --header-bg: #008080; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--main-bg); 
+            color: #333; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: pan-y;
+            overflow-x: hidden;
+        }
+        
+        header { 
+            width: 100%; 
+            background: linear-gradient(to bottom, #004d40 0%, #004d40 40%, #008080 40%, #008080 100%);
+            color: white; 
+            padding-top: calc(env(safe-area-inset-top, 20px) + 50px); 
+            padding-bottom: 15px; 
+            text-align: center; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+            margin-bottom: 10px; 
+        }
 
-<style>
-body{font-family:sans-serif;background:#f0f2f5;margin:0;text-align:center}
-header{background:#008080;color:white;padding:20px}
-#appTitle{cursor:pointer}
-.container{max-width:500px;margin:auto;padding:10px}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.day{background:white;padding:5px;border-radius:6px;cursor:pointer}
-.summary{background:#2c3e50;color:white;padding:10px;border-radius:10px;margin:10px 0}
-.btn{padding:10px;border:none;border-radius:8px;color:white;cursor:pointer}
-.cum{background:#008080}
-.graph{background:#3498db}
-.export{background:#27ae60}
-.import{background:#e67e22}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);justify-content:center;align-items:center}
-.modal-content{background:white;padding:20px;border-radius:15px;width:90%;max-width:350px}
-input,textarea{width:100%;padding:8px;margin:5px 0}
-.result{font-size:20px;font-weight:bold;margin:10px 0}
-</style>
+        #appTitle { 
+            font-size: 1.2rem;
+            margin: 0; 
+            display: inline-block;
+            padding: 2px 10px;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border: none;
+        }
+
+        #appTitle:focus { 
+            background: rgba(255, 255, 255, 0.1); 
+            outline: none; 
+        }
+        
+        .container { 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 0 10px 20px 10px; 
+            box-sizing: border-box; 
+        }
+
+        .calendar-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 8px; }
+        .nav-btn { background: var(--card-bg); border: none; padding: 10px 18px; border-radius: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; }
+        #calendarHeader { font-size: 1.1rem; font-weight: bold; }
+
+        .calendar-container { 
+            background: var(--card-bg); 
+            padding: 5px; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 500px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            box-sizing: border-box; 
+            overflow: hidden;
+            touch-action: pan-y;
+            position: relative;
+        }
+
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 1px; 
+            background-color: #eee; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            border: 1px solid #eee; 
+            width: 100%; 
+            will-change: transform, opacity;
+        }
+        
+        .is-animating { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+
+        .day-header { background: #f8f9fa; font-size: 0.7rem; font-weight: bold; padding: 6px 0; text-align: center; }
+        .day-header:nth-child(1) { color: var(--negative); } 
+        .day-header:nth-child(7) { color: var(--primary); } 
+
+        .day { background: white; aspect-ratio: 1 / 1.35; display: flex; flex-direction: column; padding: 2px 3px; cursor: pointer; position: relative; justify-content: flex-start; overflow: hidden; box-sizing: border-box; }
+        .day.other-month { background-color: #fafafa; color: #ccc; pointer-events: none; }
+        
+        .date-num { font-size: 0.7rem; font-weight: bold; color: #7f8c8d; margin-bottom: 1px; display: flex; align-items: center; }
+        .memo-dot { width: 4px; height: 4px; background-color: #bdc3c7; border-radius: 50%; margin-left: 3px; display: inline-block; }
+
+        .data-container { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex-grow: 1; width: 100%; overflow: hidden; }
+        .day-data { text-align: right; width: 100%; line-height: 1.1; white-space: nowrap; letter-spacing: -0.02em; }
+        .val-amount { font-size: 0.8rem; color: var(--dark); font-weight: bold; }
+        
+        .small-font { font-size: 0.65rem !important; }
+        .negative { color: var(--negative) !important; }
+
+        /* ②サマリーは今月の収支のみ */
+        .summary { margin-top: 12px; background: var(--dark); color: white; padding: 12px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; }
+        .summary-item { text-align: center; flex: 1; }
+        .summary-label { font-size: 0.6rem; opacity: 0.8; display: block; }
+        .summary-value { font-size: 1.1rem; font-weight: bold; margin-top: 4px; display: block; }
+
+        /* ③累計・グラフ横並び、表示切替なし */
+        .action-group { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 500px; }
+        .btn { border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .graph-btn { background: var(--primary); }
+        .export-btn { background: var(--positive); }
+        .import-btn { background: #e67e22; }
+        .cum-btn { background: #008080; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        
+        .cum-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem; }
+        .cum-table th, .cum-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        .cum-table th { background: #f8f9fa; }
+        .cum-table td:first-child { background: #f8f9fa;}
+
+        input, textarea { width: 100%; padding: 12px; margin: 5px 0 12px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; appearance: none; font-family: inherit; background: #fff; }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
+        
+        label { font-size: 0.75rem; color: #666; font-weight: bold; }
+
+        /* ⑤⑥ラベルと入力欄を横並び */
+        .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 0; }
+        .input-row label { white-space: nowrap; min-width: 60px; margin-bottom: 0; }
+        .input-row input { margin: 5px 0 12px 0; flex: 1; }
+
+        /* ⑦収支自動計算表示 */
+        .calc-balance { text-align: center; font-size: 1.1rem; font-weight: bold; margin: 4px 0 14px 0; padding: 8px; border-radius: 8px; background: #f8f9fa; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .modal-btn { flex: 1; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .save-btn { background: var(--primary); color: white; }
+        .cancel-btn { background: #eee; color: #333; }
+        .hidden { display: none !important; }
+
+
+
+/* --- カスタムテンキーのスタイル --- */
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.keypad-container {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; width: 100%;
+    background: #f1f3f4;
+    padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 8px) 16px;
+    box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+    z-index: 2000;
+    box-sizing: border-box;
+    animation: slideUp 0.2s ease-out;
+}
+
+.keypad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.keypad-grid button {
+    height: 50px;
+    font-size: 1.4rem;
+    font-weight: 400;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    color: #3c4043;
+    box-shadow: 0 1px 2px rgba(60,64,67,0.3); 
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.keypad-grid button:active {
+    background: #dee1e5;
+}
+
+.btn-gray {
+    background: #dadce0 !important;
+    font-size: 1rem !important;
+}
+ 
+       .btn-orange { background: #ff9f0a !important; color: white !important; }
+        .keypad-header {
+            display: flex;
+            justify-content: center;
+            padding-bottom: 8px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .done-link { color: #999999; transform: scaleX(2); font-weight: bold; font-size: 0.8rem; cursor: pointer; padding: 5px 30px; }
+    </style>
 </head>
-
 <body>
 
-<header>
-<h1 id="appTitle" contenteditable="true">パチンコ収支</h1>
-</header>
+    <header>
+        <h1 id="appTitle" contenteditable="true" spellcheck="false">パチンコ収支</h1>
+    </header>
 
-<div class="container">
+    <div class="container">
+        <div class="calendar-nav">
+            <button class="nav-btn" onclick="navChangeMonth(-1)">◀</button>
+            <div id="calendarHeader"></div>
+            <button class="nav-btn" onclick="navChangeMonth(1)">▶</button>
+        </div>
 
-<div class="summary">
-今月の収支：<span id="totalAmount">¥0</span>
-</div>
+        <div id="calendarSwipeArea" class="calendar-container">
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
 
-<div style="display:flex;gap:5px;margin-bottom:10px">
-<button class="btn cum" onclick="showCumulative()">累計表示</button>
-<button class="btn graph" onclick="showGraph()">グラフ表示</button>
-</div>
+        <!-- ②今月の収支のみ -->
+        <div class="summary">
+            <div class="summary-item" id="summaryAmount">
+                <span class="summary-label">今月の収支</span>
+                <span id="totalAmount" class="summary-value">¥0</span>
+            </div>
+        </div>
 
-<button class="btn export" onclick="exportCSV()">CSV出力</button>
-<button class="btn import" onclick="document.getElementById('file').click()">CSV復元</button>
-<input type="file" id="file" hidden onchange="importCSV(this)">
+        <!-- ③累計・グラフ横並び（表示切替なし） -->
+        <div class="action-group">
+            <button class="btn cum-btn" onclick="showCumulativeModal()">累計を表示</button>
+            <button class="btn graph-btn" onclick="showGraph()">グラフ表示</button>
+            <button class="btn export-btn" onclick="exportCSV()">CSVファイル出力</button>
+            <button class="btn import-btn" onclick="document.getElementById('importFile').click()">CSVから復元</button>
+            <input type="file" id="importFile" style="display:none" accept=".csv" onchange="importCSV(this)">
+        </div>
+    </div>
 
-<div id="calendar" class="calendar"></div>
+    <!-- ④⑤⑥⑦ 入力モーダル：回収額・投資額・メモ、横並び、自動収支計算 -->
+    <div id="modal" class="modal" onclick="if(event.target==this)closeModal()">
+        <div class="modal-content">
+            <h3 id="selectedDateText" style="margin-top:0; color:var(--header-bg);">記録</h3>
 
-</div>
+            <div class="input-row">
+                <label>回収額</label>
+                <input type="text" id="recoveryInput" placeholder="0" onclick="openKeypad('recoveryInput')">
+            </div>
 
-<div id="modal" class="modal" onclick="if(event.target==this)closeModal()">
-<div class="modal-content">
-<h3 id="dateText"></h3>
+            <div class="input-row">
+                <label>投資額</label>
+                <input type="text" id="investInput" placeholder="0" onclick="openKeypad('investInput')">
+            </div>
 
-<label>回収額</label>
-<input type="number" id="payoutInput" oninput="calc()">
+            <!-- ⑦リアルタイム収支表示 -->
+            <div id="calcBalanceDisplay" class="calc-balance">収支: ¥0</div>
 
-<label>投資額</label>
-<input type="number" id="investmentInput" oninput="calc()">
+            <label>メモ</label>
+            <textarea id="memoInput" rows="3" onfocus="closeKeypad()"></textarea>
+            
+            <div class="btn-group">
+                <button class="modal-btn save-btn" onclick="saveData()">保存</button>
+                <button class="modal-btn cancel-btn" onclick="closeModal()">戻る</button>
+            </div>
+        </div>
+    </div>
 
-<div id="dailyResult" class="result">¥0</div>
+    <div id="customKeypad" class="keypad-container">
+        <div class="keypad-header">
+            <div class="done-link" onclick="closeKeypad()">∨</div>
+        </div>
+        <div class="keypad-grid">
+            <button onclick="kpInput('1')">1</button>
+            <button onclick="kpInput('2')">2</button>
+            <button onclick="kpInput('3')">3</button>
+            <button onclick="kpInput('4')">4</button>
+            <button onclick="kpInput('5')">5</button>
+            <button onclick="kpInput('6')">6</button>
+            <button onclick="kpInput('7')">7</button>
+            <button onclick="kpInput('8')">8</button>
+            <button onclick="kpInput('9')">9</button>
+            <button class="btn-gray" onclick="kpToggleMinus()">＋－</button>
+            <button onclick="kpInput('0')">0</button>
+            <button onclick="kpInput('00')">00</button>
+            <button onclick="kpInput('.')">.</button>
+            <button class="btn-gray" style="grid-column: span 2;" onclick="kpDelete()">←BackSpace</button>
+        </div>
+    </div>
 
-<label>メモ</label>
-<textarea id="memoInput"></textarea>
+    <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">累計収支</h3>
+            <table class="cum-table">
+                <thead>
+                    <tr><th>月</th><th>月間収支</th><th>累計収支</th></tr>
+                </thead>
+                <tbody id="cumTableBody"></tbody>
+            </table>
+            <canvas id="cumChart"></canvas>
+            <button class="modal-btn cancel-btn" style="width:100%; margin-top:15px;" onclick="document.getElementById('cumModal').style.display='none'">閉じる</button>
+        </div>
+    </div>
 
-<button onclick="save()">保存</button>
-<button onclick="closeModal()">戻る</button>
+    <div id="graphModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
+        <div class="modal-content" style="max-width: 600px;">
+            <canvas id="balanceChart"></canvas>
+            <button class="modal-btn cancel-btn" style="width:100%; margin-top:15px;" onclick="document.getElementById('graphModal').style.display='none'">閉じる</button>
+        </div>
+    </div>
 
-</div>
-</div>
+    <script>
+let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
+        let viewDate = new Date(); 
+        let selectedDateKey = "";
+        let myChart = null;
+        let cumChartInstance = null;
 
-<script>
-let data=JSON.parse(localStorage.getItem("pachi_data"))||{};
-let selected="";
+        // --- PC/スマホ判定とテンキー制御 ---
+        let activeInputId = null;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-function render(){
-const cal=document.getElementById("calendar");
-cal.innerHTML="";
-let now=new Date();
-let y=now.getFullYear(),m=now.getMonth();
-let last=new Date(y,m+1,0).getDate();
-let total=0;
+        function openKeypad(id) {
+            if (isTouchDevice) {
+                activeInputId = id;
+                const input = document.getElementById(id);
+                input.readOnly = true;
+                document.getElementById('customKeypad').style.display = 'block';
+                input.focus();
+            } else {
+                const input = document.getElementById(id);
+                input.readOnly = false;
+                closeKeypad();
+            }
+        }
 
-for(let d=1;d<=last;d++){
-let key=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-let div=document.createElement("div");
-div.className="day";
-let amt=data[key]?.amount||0;
-if(amt) div.innerHTML=d+"<br>"+amt.toLocaleString();
-else div.innerText=d;
-div.onclick=()=>openModal(key);
-cal.appendChild(div);
-total+=amt;
-}
-document.getElementById("totalAmount").innerText="¥"+total.toLocaleString();
-}
+        function closeKeypad() {
+            document.getElementById('customKeypad').style.display = 'none';
+            activeInputId = null;
+        }
 
-function openModal(key){
-selected=key;
-document.getElementById("dateText").innerText=key;
-document.getElementById("payoutInput").value=data[key]?.payout||"";
-document.getElementById("investmentInput").value=data[key]?.investment||"";
-document.getElementById("memoInput").value=data[key]?.memo||"";
-calc();
-document.getElementById("modal").style.display="flex";
-}
+        function kpInput(val) {
+            if(!activeInputId) return;
+            const input = document.getElementById(activeInputId);
+            if(val === '.' && input.value.includes('.')) return;
+            input.value += val;
+            autoCalcBalance();
+        }
 
-function calc(){
-let p=parseInt(payoutInput.value)||0;
-let i=parseInt(investmentInput.value)||0;
-let r=p-i;
-let el=document.getElementById("dailyResult");
-el.innerText="¥"+r.toLocaleString();
-el.style.color=r<0?"red":"green";
-}
+        function kpDelete() {
+            if(!activeInputId) return;
+            const input = document.getElementById(activeInputId);
+            input.value = input.value.slice(0, -1);
+            autoCalcBalance();
+        }
 
-function save(){
-let p=parseInt(payoutInput.value)||0;
-let i=parseInt(investmentInput.value)||0;
-let m=memoInput.value||"";
-if(!p&&!i&&!m) delete data[selected];
-else data[selected]={payout:p,investment:i,amount:p-i,memo:m};
-localStorage.setItem("pachi_data",JSON.stringify(data));
-closeModal();
-render();
-}
+        function kpToggleMinus() {
+            if(!activeInputId) return;
+            const input = document.getElementById(activeInputId);
+            if (input.value.startsWith('-')) {
+                input.value = input.value.substring(1);
+            } else {
+                if(input.value !== "") {
+                    input.value = '-' + input.value;
+                } else {
+                    input.value = '-';
+                }
+            }
+            autoCalcBalance();
+        }
 
-function closeModal(){modal.style.display="none"}
+        // ⑦ リアルタイム収支計算（回収額 - 投資額）
+        function autoCalcBalance() {
+            const recovery = parseInt(document.getElementById('recoveryInput').value) || 0;
+            const invest = parseInt(document.getElementById('investInput').value) || 0;
+            const balance = recovery - invest;
+            const display = document.getElementById('calcBalanceDisplay');
+            display.innerText = `収支: ¥${balance.toLocaleString()}`;
+            display.style.color = balance < 0 ? 'var(--negative)' : balance > 0 ? 'var(--positive)' : '#333';
+        }
 
-function exportCSV(){
-let csv="日付,回収額,投資額,収支,メモ\n";
-Object.keys(data).forEach(k=>{
-let d=data[k];
-csv+=`${k},${d.payout},${d.investment},${d.amount},"${d.memo}"\n`;
-});
-let blob=new Blob([csv],{type:"text/csv"});
-let a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="Pachi収支_"+new Date().toISOString().slice(0,10)+".csv";
-a.click();
-}
+        // --- タイトル保存 ---
+        const titleEl = document.getElementById('appTitle');
+        const savedTitle = localStorage.getItem('app_title_pachi');
+        if (savedTitle) titleEl.innerText = savedTitle;
+        titleEl.addEventListener('blur', () => localStorage.setItem('app_title_pachi', titleEl.innerText));
+        titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
 
-function importCSV(input){
-let file=input.files[0];
-if(!file)return;
-let reader=new FileReader();
-reader.onload=e=>{
-let lines=e.target.result.split("\n");
-let obj={};
-for(let i=1;i<lines.length;i++){
-let l=lines[i].split(",");
-if(l.length>=4){
-obj[l[0]]={
-payout:parseInt(l[1])||0,
-investment:parseInt(l[2])||0,
-amount:parseInt(l[3])||0,
-memo:l[4]||""
-};
-}
-}
-data=obj;
-localStorage.setItem("pachi_data",JSON.stringify(data));
-render();
-};
-reader.readAsText(file);
-}
+        let startX = 0, currentX = 0, isDragging = false, isAnimating = false;
+        const swipeArea = document.getElementById('calendarSwipeArea'), grid = document.getElementById('calendarGrid');
 
-function showGraph(){
-alert("グラフ機能は既存コードを流用可能");
-}
-function showCumulative(){
-alert("累計機能は既存コードを流用可能");
-}
+        swipeArea.addEventListener('touchstart', (e) => {
+            if (isAnimating) return;
+            startX = e.touches[0].clientX; currentX = startX;
+            isDragging = true; grid.classList.remove('is-animating');
+        }, {passive: true});
 
-render();
-</script>
+        swipeArea.addEventListener('touchmove', (e) => {
+            if (!isDragging || isAnimating) return;
+            currentX = e.touches[0].clientX;
+            const diff = currentX - startX;
+            grid.style.transform = `translateX(${diff}px)`;
+        }, {passive: true});
 
+        swipeArea.addEventListener('touchend', (e) => {
+            if (!isDragging || isAnimating) return;
+            isDragging = false;
+            const diff = currentX - startX, threshold = swipeArea.offsetWidth * 0.25;
+            if (Math.abs(diff) > threshold) {
+                isAnimating = true; grid.classList.add('is-animating');
+                completeSwipeAnimation(diff > 0 ? -1 : 1);
+            } else {
+                if (diff !== 0) { grid.classList.add('is-animating'); grid.style.transform = 'translateX(0)'; }
+            }
+        });
+
+        function animateMonthChange(diffMonth) {
+            const containerWidth = swipeArea.offsetWidth;
+            const exitX = diffMonth > 0 ? -containerWidth : containerWidth;
+            grid.classList.add('is-animating');
+            grid.style.transform = `translateX(${exitX}px)`;
+            grid.style.opacity = '0';
+            setTimeout(() => {
+                grid.classList.remove('is-animating');
+                grid.style.transform = `translateX(${-exitX}px)`;
+                viewDate.setMonth(viewDate.getMonth() + diffMonth);
+                requestAnimationFrame(() => {
+                    renderCalendar();
+                    requestAnimationFrame(() => {
+                        grid.classList.add('is-animating');
+                        grid.style.transform = 'translateX(0)';
+                        grid.style.opacity = '1';
+                        setTimeout(() => { isAnimating = false; }, 300);
+                    });
+                });
+            }, 300);
+        }
+
+        function completeSwipeAnimation(diffMonth) {
+            animateMonthChange(diffMonth);
+        }
+
+        function navChangeMonth(diffMonth) {
+            if (isAnimating) return;
+            isAnimating = true;
+            animateMonthChange(diffMonth);
+        }
+
+        const dayHeaderHtml = '<div class="day-header">日</div><div class="day-header">月</div><div class="day-header">火</div><div class="day-header">水</div><div class="day-header">木</div><div class="day-header">金</div><div class="day-header">土</div>';
+
+        function renderCalendar() {
+            const year = viewDate.getFullYear(), month = viewDate.getMonth();
+            const headerEl = document.getElementById('calendarHeader');
+            if(headerEl) headerEl.innerText = `${year}年 ${month + 1}月`;
+            grid.innerHTML = dayHeaderHtml;
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            const fragment = document.createDocumentFragment();
+
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'day other-month';
+                fragment.appendChild(empty);
+            }
+
+            for (let d = 1; d <= lastDate; d++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day';
+                const hasMemo = (currentData[dateKey]?.memo && currentData[dateKey].memo.trim() !== "");
+                let html = `<span class="date-num">${d}${hasMemo ? '<span class="memo-dot"></span>' : ''}</span>`;
+                
+                if (currentData[dateKey]) {
+                    const amt = currentData[dateKey].amount || 0;
+                    const needsSmallFont = Math.abs(amt) >= 100000 ? 'small-font' : '';
+                    html += `<div class="data-container">
+                        <div class="day-data val-amount ${amt < 0 ? 'negative' : ''} ${needsSmallFont}">${amt.toLocaleString()}</div>
+                    </div>`;
+                }
+                dayDiv.innerHTML = html;
+                dayDiv.onclick = () => openModal(dateKey);
+                fragment.appendChild(dayDiv);
+            }
+            grid.appendChild(fragment);
+            updateSummary();
+        }
+
+        function openModal(dateKey) {
+            selectedDateKey = dateKey;
+            const parts = dateKey.split('-');
+            document.getElementById('selectedDateText').innerText = `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+            const data = currentData[dateKey];
+            document.getElementById('recoveryInput').value = data?.recovery ?? "";
+            document.getElementById('investInput').value = data?.invest ?? "";
+            document.getElementById('memoInput').value = data?.memo || "";
+            document.getElementById('modal').style.display = 'flex';
+            autoCalcBalance();
+        }
+
+        function saveData() {
+            const recovery = parseInt(document.getElementById('recoveryInput').value);
+            const invest = parseInt(document.getElementById('investInput').value);
+            const memo = document.getElementById('memoInput').value;
+            const amount = (isNaN(recovery) ? 0 : recovery) - (isNaN(invest) ? 0 : invest);
+            if (isNaN(recovery) && isNaN(invest) && (!memo || memo.trim() === "")) {
+                delete currentData[selectedDateKey];
+            } else {
+                currentData[selectedDateKey] = { recovery: recovery || 0, invest: invest || 0, amount: amount, memo: memo || "" };
+            }
+            invalidateSummaryCache(selectedDateKey);
+            localStorage.setItem('pachi_data', JSON.stringify(currentData));
+            closeModal(); renderCalendar();
+        }
+
+        function closeModal() { 
+            document.getElementById('modal').style.display = 'none'; 
+            closeKeypad();
+        }
+
+        // 月別サマリーキャッシュ
+        let summaryCache = {};
+
+        function invalidateSummaryCache(dateKey) {
+            const ym = dateKey.slice(0, 7);
+            delete summaryCache[ym];
+        }
+
+        function updateSummary() {
+            const ym = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
+            if (!summaryCache[ym]) {
+                let tA = 0;
+                Object.keys(currentData).forEach(k => {
+                    if (k.startsWith(ym)) {
+                        tA += (currentData[k].amount || 0);
+                    }
+                });
+                summaryCache[ym] = { amount: tA };
+            }
+            const { amount: tA } = summaryCache[ym];
+            const aEl = document.getElementById('totalAmount');
+            aEl.innerText = `¥${tA.toLocaleString()}`; aEl.className = `summary-value ${tA < 0 ? 'negative' : ''}`;
+        }
+
+        function showCumulativeModal() {
+            const targetYear = viewDate.getFullYear();
+            document.getElementById('cumModalTitle').innerText = `${targetYear}年 累計収支`;
+            const tbody = document.getElementById('cumTableBody'); tbody.innerHTML = "";
+
+            const monthlyAmounts = new Array(12).fill(0);
+            const yearPrefix = `${targetYear}-`;
+            Object.keys(currentData).forEach(k => {
+                if (k.startsWith(yearPrefix)) {
+                    const m = parseInt(k.slice(5, 7)) - 1;
+                    if (m >= 0 && m < 12) monthlyAmounts[m] += (currentData[k].amount || 0);
+                }
+            });
+
+            let cumulative = 0;
+            const monthLabels = [], cumPoints = [];
+            for (let m = 0; m < 12; m++) {
+                const monthSum = monthlyAmounts[m];
+                cumulative += monthSum;
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${m + 1}月</td><td class="${monthSum < 0 ? 'negative' : ''}">${monthSum.toLocaleString()}</td><td class="${cumulative < 0 ? 'negative' : ''}">${cumulative.toLocaleString()}</td>`;
+                tbody.appendChild(row);
+                monthLabels.push(`${m + 1}月`);
+                cumPoints.push(cumulative);
+            }
+            document.getElementById('cumModal').style.display = 'flex';
+            const ctx = document.getElementById('cumChart').getContext('2d');
+            const allZero = cumPoints.every(v => v === 0);
+            const yConfig = { beginAtZero: true, max: allZero ? 0 : undefined, min: allZero ? 0 : undefined, ticks: { stepSize: allZero ? 1 : undefined, callback: v => '¥' + v.toLocaleString() } };
+            if (cumChartInstance) {
+                cumChartInstance.data.labels = monthLabels;
+                cumChartInstance.data.datasets[0].data = cumPoints;
+                cumChartInstance.options.scales.y = yConfig;
+                cumChartInstance.update();
+            } else {
+                cumChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: monthLabels, datasets: [{ data: cumPoints, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', borderWidth: 3, fill: true, tension: 0.3 }] },
+                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: yConfig } }
+                });
+            }
+        }
+
+        function showGraph() {
+            const year = viewDate.getFullYear(), month = viewDate.getMonth(), lastDate = new Date(year, month + 1, 0).getDate();
+            const labels = [], dataPoints = []; let cumulativeBalance = 0;
+            for (let d = 1; d <= lastDate; d++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                labels.push(d); cumulativeBalance += (currentData[dateKey]?.amount || 0); dataPoints.push(cumulativeBalance);
+            }
+            document.getElementById('graphModal').style.display = 'flex';
+            const ctx = document.getElementById('balanceChart').getContext('2d');
+            const allZero = dataPoints.every(v => v === 0);
+            const yConfig = { beginAtZero: true, max: allZero ? 0 : undefined, min: allZero ? 0 : undefined, ticks: { stepSize: allZero ? 1 : undefined, callback: v => '¥' + v.toLocaleString() } };
+            const xConfig = { ticks: { maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 10 } };
+            if (myChart) {
+                myChart.data.labels = labels;
+                myChart.data.datasets[0].data = dataPoints;
+                myChart.options.scales.y = yConfig;
+                myChart.update();
+            } else {
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ data: dataPoints, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.3 }] },
+                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: yConfig, x: xConfig } }
+                });
+            }
+        }
+
+        // ⑧ CSVファイル名はPachi収支で始まる
+        function exportCSV() {
+            let csv = "\uFEFF日付,回収額,投資額,収支,メモ\n";
+            Object.keys(currentData).sort().forEach(k => {
+                const m = (currentData[k].memo || "").replace(/"/g, '""');
+                csv += `${k},${currentData[k].recovery || 0},${currentData[k].invest || 0},${currentData[k].amount || 0},"${m}"\n`;
+            });
+            const fileName = `Pachi収支_${new Date().toISOString().slice(0,10)}.csv`;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = fileName; link.click();
+        }
+
+        function parseCSVLine(line) {
+            const cols = [];
+            let cur = '', inQuote = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (inQuote) {
+                    if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                    else if (ch === '"') { inQuote = false; }
+                    else { cur += ch; }
+                } else {
+                    if (ch === '"') { inQuote = true; }
+                    else if (ch === ',') { cols.push(cur); cur = ''; }
+                    else { cur += ch; }
+                }
+            }
+            cols.push(cur);
+            return cols;
+        }
+
+        function normalizeDateKey(raw) {
+            const s = raw.replace(/^\uFEFF/, "").trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+            if (m) {
+                return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+            }
+            return null;
+        }
+
+        function importCSV(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result, lines = text.split(/\r?\n/), newData = {}; let count = 0;
+                    for (let i = 1; i < lines.length; i++) {
+                        if (!lines[i].trim()) continue;
+                        const cols = parseCSVLine(lines[i]);
+                        if (cols.length >= 4) {
+                            const date = normalizeDateKey(cols[0]);
+                            if (date) {
+                                const cleanRecovery = (cols[1] || "").replace(/,/g, '');
+                                const cleanInvest = (cols[2] || "").replace(/,/g, '');
+                                const cleanAmount = (cols[3] || "").replace(/,/g, '');
+                                newData[date] = { 
+                                    recovery: parseInt(cleanRecovery) || 0, 
+                                    invest: parseInt(cleanInvest) || 0, 
+                                    amount: parseInt(cleanAmount) || 0, 
+                                    memo: cols[4] || "" 
+                                };
+                                count++;
+                            }
+                        }
+                    }
+                    if (count > 0 && confirm(count + "件復元しますか？")) {
+                        currentData = newData;
+                        summaryCache = {};
+                        localStorage.setItem('pachi_data', JSON.stringify(currentData));
+                        renderCalendar(); alert("復元完了");
+                    } else if (count === 0) {
+                        alert("復元できるデータが見つかりませんでした。\nファイルの日付形式を確認してください。");
+                    }
+                } catch (err) { alert("読み込みエラーが発生しました。"); }
+            };
+            reader.readAsText(file, "UTF-8"); input.value = ""; 
+        }
+
+        renderCalendar();
+    </script>
 </body>
 </html>
