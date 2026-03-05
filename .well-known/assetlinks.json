@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "io.github.fx_profit.twa",
-        "sha256_cert_fingerprints": ["72:55:DF:D2:15:49:1F:00:30:DE:B6:EB:4C:2A:05:04:5F:83:AA:74:EF:A6:4A:8A:CF:61:18:E8:67:F6:27:60"]
+        "sha256_cert_fingerprints": ["A0:A0:66:B8:C8:DD:E2:F2:B7:36:6E:F9:02:97:13:5B:C4:82:51:91:85:CA:20:1B:E6:28:F3:B0:FD:A8:AC:6B"]
       }
     }]
