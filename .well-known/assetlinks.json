@@ -1,9 +1,11 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.pachiprofit.app",
-        "sha256_cert_fingerprints": ["0B:BA:54:66:EA:C2:F7:70:68:AE:CE:E9:B5:12:CC:37:27:EF:A6:79:E9:4E:DF:5E:B8:1A:82:A0:0F:E6:89:CA"]
-      }
-    }]
-
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pachiprofit.app",
+      "sha256_cert_fingerprints":
+        ["26:99:35:0F:6F:42:70:5F:48:D0:B1:05:F1:DA:87:D2:94:6C:68:25:C5:AB:AC:B3:15:09:19:F9:04:0B:05:44"]
+    }
+  }
+]
