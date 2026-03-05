@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.pachiprofit.app",
+        "sha256_cert_fingerprints": ["0B:BA:54:66:EA:C2:F7:70:68:AE:CE:E9:B5:12:CC:37:27:EF:A6:79:E9:4E:DF:5E:B8:1A:82:A0:0F:E6:89:CA"]
+      }
+    }]
