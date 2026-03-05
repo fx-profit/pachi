@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.fx_profit.twa",
-        "sha256_cert_fingerprints": ["A0:A0:66:B8:C8:DD:E2:F2:B7:36:6E:F9:02:97:13:5B:C4:82:51:91:85:CA:20:1B:E6:28:F3:B0:FD:A8:AC:6B"]
-      }
-    }]
