@@ -366,6 +366,14 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
                 dayDiv.onclick = () => openModal(dateKey);
                 fragment.appendChild(dayDiv);
             }
+            // 月末後の空白セルを埋める
+const totalCells = firstDay + lastDate;
+const remainingCells = (7 - (totalCells % 7)) % 7;
+for (let i = 0; i < remainingCells; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'day other-month';
+    fragment.appendChild(empty);
+}
             grid.appendChild(fragment);
             updateSummary();
         }
@@ -586,6 +594,7 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
     </script>
 </body>
 </html>
+
 
 
 
