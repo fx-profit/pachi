@@ -548,7 +548,19 @@ for (let i = 0; i < remainingCells; i++) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const text = e.target.result, lines = text.split(/\r?\n/), newData = {}; let count = 0;
+                    const text = e.target.result, newData = {}; let count = 0;
+// クォート内の改行を考慮した行分割
+const lines = [];
+let cur = '', inQ = false;
+for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') { inQ = !inQ; cur += ch; }
+    else if (!inQ && (ch === '\n' || (ch === '\r' && text[i+1] === '\n'))) {
+        if (ch === '\r') i++;
+        lines.push(cur); cur = '';
+    } else { cur += ch; }
+}
+if (cur) lines.push(cur);
                     for (let i = 1; i < lines.length; i++) {
                         if (!lines[i].trim()) continue;
                         const cols = parseCSVLine(lines[i]);
@@ -594,6 +606,7 @@ for (let i = 0; i < remainingCells; i++) {
     </script>
 </body>
 </html>
+
 
 
 
