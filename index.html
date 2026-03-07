@@ -233,9 +233,10 @@
 
 
 
-    <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
-        <div class="modal-content" style="max-width: 500px;">
-            <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">累計収支</h3>
+<div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
+    <div class="modal-content" style="max-width: 500px; position: relative;">
+        <button onclick="document.getElementById('cumModal').style.display='none'" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:#999; line-height:1;">×</button>
+        <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">累計収支</h3>
             <table class="cum-table">
                 <thead>
                     <tr><th>月</th><th>月間収支</th><th>累計収支</th></tr>
@@ -676,6 +677,7 @@ if (cur) lines.push(cur);
     </script>
 </body>
 </html>
+
 
 
 
