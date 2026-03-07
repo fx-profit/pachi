@@ -361,7 +361,7 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
                 
                 if (currentData[dateKey]) {
                     const amt = currentData[dateKey].amount || 0;
-                    const needsSmallFont = Math.abs(amt) >= 100000 ? 'small-font' : '';
+                    const needsSmallFont = Math.abs(amt) >= 1000000 ? 'small-font' : '';
                     html += `<div class="data-container">
                         <div class="day-data val-amount ${amt < 0 ? 'negative' : ''} ${needsSmallFont}">${amt.toLocaleString()}</div>
                     </div>`;
@@ -634,6 +634,7 @@ if (cur) lines.push(cur);
     </script>
 </body>
 </html>
+
 
 
 
