@@ -208,12 +208,12 @@
         </div>
 
             <div class="input-row">
-                <label style="color:var(--positive);">回収額</label>
+                <label style="color:var(--positive);">回収金額</label>
                 <input type="text" id="recoveryInput" inputmode="numeric" placeholder="0" oninput="autoCalcBalance()">
             </div>
 
             <div class="input-row">
-                <label style="color:var(--negative);">投資額</label>
+                <label style="color:var(--negative);">投資金額</label>
                 <input type="text" id="investInput" inputmode="numeric" placeholder="0" oninput="autoCalcBalance()">
             </div>
 
@@ -261,7 +261,7 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
         let myChart = null;
         let cumChartInstance = null;
 
-        // リアルタイム収支計算（回収額 - 投資額）
+        // リアルタイム収支計算（回収金額 - 投資金額）
         function autoCalcBalance() {
             const recovery = parseInt(document.getElementById('recoveryInput').value) || 0;
             const invest = parseInt(document.getElementById('investInput').value) || 0;
@@ -574,7 +574,7 @@ content.addEventListener('touchend', e => {
 
         // ⑧ CSVファイル名はPachi収支で始まる
         function exportCSV() {
-            let csv = "\uFEFF日付,回収額,投資額,収支,メモ\n";
+            let csv = "\uFEFF日付,回収金額,投資金額,収支,メモ\n";
             Object.keys(currentData).sort().forEach(k => {
                 const m = (currentData[k].memo || "").replace(/"/g, '""');
                 csv += `${k},${currentData[k].recovery || 0},${currentData[k].invest || 0},${currentData[k].amount || 0},"${m}"\n`;
@@ -676,6 +676,7 @@ if (cur) lines.push(cur);
     </script>
 </body>
 </html>
+
 
 
 
