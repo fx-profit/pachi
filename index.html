@@ -117,7 +117,7 @@
         .day-data { text-align: right; width: 100%; line-height: 1.1; white-space: nowrap; letter-spacing: -0.02em; }
         .val-amount { font-size: 0.8rem; color: var(--dark); font-weight: bold; }
         
-        .small-font { font-size: 0.65rem !important; }
+        .small-font { font-size: 0.7rem !important; }
         .negative { color: var(--negative) !important; }
 
         .summary { margin-top: 12px; background: #300000; color: white; padding: 12px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; }
@@ -361,7 +361,7 @@ let currentData = JSON.parse(localStorage.getItem('pachi_data')) || {};
                 
                 if (currentData[dateKey]) {
                     const amt = currentData[dateKey].amount || 0;
-                    const needsSmallFont = Math.abs(amt) >= 1000000 ? 'small-font' : '';
+                    const needsSmallFont = Math.abs(amt) >= 100000 ? 'small-font' : '';
                     html += `<div class="data-container">
                         <div class="day-data val-amount ${amt < 0 ? 'negative' : ''} ${needsSmallFont}">${amt.toLocaleString()}</div>
                     </div>`;
@@ -634,6 +634,7 @@ if (cur) lines.push(cur);
     </script>
 </body>
 </html>
+
 
 
 
