@@ -135,6 +135,10 @@
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
         .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+
+        .modal-content.is-sliding {
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+}
         
         .cum-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem; }
         .cum-table th, .cum-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
@@ -414,10 +418,36 @@ for (let i = 0; i < remainingCells; i++) {
         }
 
 function shiftModalDate(diff) {
-    const d = new Date(selectedDateKey);
-    d.setDate(d.getDate() + diff);
-    const newKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    openModal(newKey);
+    const content = document.getElementById('modalContent');
+    const exitX = diff > 0 ? '-110%' : '110%';
+    const enterX = diff > 0 ? '110%' : '-110%';
+
+    // スライドアウト
+    content.classList.add('is-sliding');
+    content.style.transform = `translateX(${exitX})`;
+    content.style.opacity = '0';
+
+    setTimeout(() => {
+        // 新しい日付のデータをセット（アニメーションなし）
+        content.classList.remove('is-sliding');
+        content.style.transform = `translateX(${enterX})`;
+        content.style.opacity = '0';
+
+        const d = new Date(selectedDateKey);
+        d.setDate(d.getDate() + diff);
+        const newKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        openModal(newKey);
+
+        // スライドイン
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                content.classList.add('is-sliding');
+                content.style.transform = 'translateX(0)';
+                content.style.opacity = '1';
+                setTimeout(() => content.classList.remove('is-sliding'), 250);
+            });
+        });
+    }, 250);
 }
 
 // モーダル内スワイプ
@@ -428,14 +458,26 @@ function shiftModalDate(diff) {
         mStartX = e.touches[0].clientX;
         mMoved = false;
     }, {passive: true});
-    content.addEventListener('touchmove', e => {
-        if (Math.abs(e.touches[0].clientX - mStartX) > 10) mMoved = true;
-    }, {passive: true});
-    content.addEventListener('touchend', e => {
-        if (!mMoved) return;
-        const diff = e.changedTouches[0].clientX - mStartX;
-        if (Math.abs(diff) > 50) shiftModalDate(diff > 0 ? -1 : 1);
-    }, {passive: true});
+content.addEventListener('touchmove', e => {
+    const dx = e.touches[0].clientX - mStartX;
+    if (Math.abs(dx) > 10) {
+        mMoved = true;
+        content.style.transform = `translateX(${dx * 0.4}px)`; // 指に追従（軽め）
+    }
+}, {passive: true});
+content.addEventListener('touchend', e => {
+    if (!mMoved) return;
+    const diff = e.changedTouches[0].clientX - mStartX;
+    if (Math.abs(diff) > 50) {
+        shiftModalDate(diff > 0 ? -1 : 1);
+    } else {
+        // 閾値未満はキャンセルして元に戻す
+        content.classList.add('is-sliding');
+        content.style.transform = 'translateX(0)';
+        setTimeout(() => content.classList.remove('is-sliding'), 250);
+    }
+    mMoved = false;
+}, {passive: true});
 })();
         // 月別サマリーキャッシュ
         let summaryCache = {};
@@ -634,6 +676,7 @@ if (cur) lines.push(cur);
     </script>
 </body>
 </html>
+
 
 
 
