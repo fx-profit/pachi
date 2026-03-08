@@ -14,13 +14,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --main-bg: #f0f2f5;
+            --main-bg: #f0f2f5; 
             --card-bg: #ffffff; 
             --primary: #3498db; 
-            --negative: #e74c3c; 
+            --negative: #CE0F17; 
             --positive: #27ae60; 
             --dark: #2c3e50; 
-            --header-bg: #999999; 
+            --header-bg: #510004; 
         }
         
         body { 
@@ -39,7 +39,7 @@
         
         header { 
             width: 100%; 
-            background: linear-gradient(to bottom, #300000 0%, #300000 40%, #cc1414 40%, #cc1414 100%);
+            background: linear-gradient(to bottom, #510004 0%, #510004 40%, #cc1414 40%, #cc1414 100%);
             color: white; 
             padding-top: calc(env(safe-area-inset-top, 20px) + 50px); 
             padding-bottom: 15px; 
@@ -120,14 +120,14 @@
         .small-font { font-size: 0.7rem !important; }
         .negative { color: var(--negative) !important; }
 
-        .summary { margin-top: 12px; background: #300000; color: white; padding: 12px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; }
+        .summary { margin-top: 12px; background: linear-gradient(45deg, #B67B03 0%, #DAAF08 20%, #FEE9A0 35%, #FEE9A0 50%, #FEE9A0 65%, #DAAF08 75%, #B67B03 90% 100%); color: #46140A; padding: 12px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; }
         .summary-item { text-align: center; flex: 1; }
         .summary-label { font-size: 0.6rem; opacity: 0.8; display: block; }
         .summary-value { font-size: 1.1rem; font-weight: bold; margin-top: 4px; display: block; }
 
         .action-group { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 500px; }
         .btn { border: none; padding: 14px; border-radius: 300px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .cum-btn { background: #008080; }
+        .cum-btn { background: var(--negative); }
         .graph-btn { background: var(--primary); }
         .export-btn { background: var(--positive); }
         .import-btn { background: #e67e22; }
@@ -676,45 +676,4 @@ if (cur) lines.push(cur);
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
