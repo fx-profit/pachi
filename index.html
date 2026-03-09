@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,21 +7,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="author" content="Hiroro">
-    <link rel="manifest" href="manifest.json">
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="favicon.png">
-    <title>Pachi Profit</title>
-    <meta name="description" content="パチンコ・パチスロ用の収支管理アプリ">
+    <link rel="manifest" href="manifest.json">
+    <title>パチ日記</title>
+    <meta name="description" content="日記感覚でシンプルなパチンコ・パチスロ用収支管理アプリ">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --main-bg: #f0f2f5; 
+            --main-bg: #F0F2F5; 
             --card-bg: #ffffff; 
             --primary: #3498db; 
-            --negative: #CE0F17; 
-            --positive: #27ae60; 
-            --dark: #2c3e50; 
-            --header-bg: #510004; 
+            --negative: #FF0000; 
+            --positive: #0071BC; 
+            --dark: #7f8c8d; 
+            --header-bg: #0076A9; 
         }
         
         body { 
@@ -39,9 +40,9 @@
         
         header { 
             width: 100%; 
-            background: linear-gradient(to bottom, #510004 0%, #510004 40%, #cc1414 40%, #cc1414 100%);
+            background: var(--header-bg); 
             color: white; 
-            padding-top: calc(env(safe-area-inset-top, 20px) + 50px); 
+            padding-top: calc(env(safe-area-inset-top, 20px) + 15px); 
             padding-bottom: 15px; 
             text-align: center; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
@@ -49,7 +50,7 @@
         }
 
         #appTitle { 
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             margin: 0; 
             display: inline-block;
             padding: 2px 10px;
@@ -73,8 +74,8 @@
         }
 
         .calendar-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 8px; }
-        .nav-btn { background: var(--card-bg); border: none; padding: 10px 13px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; text-align:center;}
-        #calendarHeader { font-size: 1.1rem; font-weight: bold; }
+        .nav-btn { background: none; border: none; padding: 10px 13px; font-size: 1rem; cursor: pointer; color: #999; }
+        #calendarHeader { font-size: 1.2rem; font-weight: bold; }
 
         .calendar-container { 
             background: var(--card-bg); 
@@ -110,28 +111,30 @@
         .day { background: white; aspect-ratio: 1 / 1.35; display: flex; flex-direction: column; padding: 2px 3px; cursor: pointer; position: relative; justify-content: flex-start; overflow: hidden; box-sizing: border-box; }
         .day.other-month { background-color: #fafafa; color: #ccc; pointer-events: none; }
         
-        .date-num { font-size: 0.9rem; font-weight: bold; color: #7f8c8d; margin-bottom: 1px; display: flex; align-items: center; }
+        .date-num { text-align: center; font-size: 0.9rem; font-weight: bold; color: #7f8c8d; margin-bottom: 1px; display: flex; align-items: center; justify-content: center; width: 100%; }
         .memo-dot { width: 4px; height: 4px; background-color: #bdc3c7; border-radius: 50%; margin-left: 3px; display: inline-block; }
 
         .data-container { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex-grow: 1; width: 100%; overflow: hidden; }
-        .day-data { text-align: right; width: 100%; line-height: 1.1; white-space: nowrap; letter-spacing: -0.02em; }
+        .day-data { text-align: center; width: 100%; line-height: 1.1; white-space: nowrap; letter-spacing: -0.02em; }
         .val-amount { font-size: 0.8rem; color: var(--positive); font-weight: bold; }
         
         .small-font { font-size: 0.7rem !important; }
         .negative { color: var(--negative) !important; }
 
-        .summary { margin-top: 12px; background: linear-gradient(45deg, #B67B03 0%, #DAAF08 20%, #FEE9A0 35%, #FEE9A0 50%, #FEE9A0 65%, #DAAF08 75%, #B67B03 90% 100%); color: #46140A; padding: 12px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; }
+        .summary { margin-top: 12px; background: #FFF; color: #000; padding: 12px; border-radius: 12px; border:solid 1px #f8f9fa;width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1)}
         .summary-item { text-align: center; flex: 1; }
-        .summary-label { font-size: 0.6rem; opacity: 0.8; display: block; }
-        .summary-value { font-size: 1.1rem; font-weight: bold; margin-top: 4px; display: block; }
+        .summary-label { font-size: 0.7rem; opacity: 0.8; display: block; }
+        .summary-value { font-size: 1.2rem; font-weight: bold; margin-top: 4px; display: block; }
 
         .action-group { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 500px; }
-        .btn { border: none; padding: 14px; border-radius: 300px; cursor: pointer; font-size: 0.85rem; color: white; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .cum-btn { background: var(--negative); }
-        .graph-btn { background: var(--primary); }
-        .export-btn { background: var(--positive); }
-        .import-btn { background: #e67e22; }
+        .btn { border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; color: #FFF; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      
+       .cum-btn { background: #009E96; }
+        .graph-btn { background: #009E96; }
+        .export-btn { background: #F39800; }
+        .import-btn { background: #009E96; } 
 
+        
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
         .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
 
@@ -169,7 +172,7 @@
 <body>
 
     <header>
-        <h1 id="appTitle" contenteditable="true" spellcheck="false">パチンコ・パチスロ収支</h1>
+        <h1 id="appTitle" contenteditable="true" spellcheck="false">パチ日記</h1>
     </header>
 
     <div class="container">
@@ -202,9 +205,9 @@
 <div id="modal" class="modal" onclick="if(event.target==this)saveData()">
     <div class="modal-content" id="modalContent">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <button onclick="shiftModalDate(-1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:var(--header-bg);">◀</button>
-            <h3 id="selectedDateText" style="margin:0; color:var(--header-bg);"></h3>
-            <button onclick="shiftModalDate(1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:var(--header-bg);">▶</button>
+            <button onclick="shiftModalDate(-1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:var(--dark);">◀</button>
+            <h3 id="selectedDateText" style="margin:0; color:var(--dark);"></h3>
+            <button onclick="shiftModalDate(1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:var(--dark);">▶</button>
         </div>
 
             <div class="input-row">
@@ -540,7 +543,7 @@ content.addEventListener('touchend', e => {
             } else {
                 cumChartInstance = new Chart(ctx, {
                     type: 'line',
-                    data: { labels: monthLabels, datasets: [{ data: cumPoints, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', borderWidth: 3, fill: true, tension: 0 }] },
+                    data: { labels: monthLabels, datasets: [{ data: cumPoints, borderColor: '#3498db', borderWidth: 3, fill: { value: 0, above: 'rgba(52, 152, 219, 0.15)', below: 'rgba(255, 80, 80, 0.15)' }, tension: 0 }] },
                     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: yConfig } }
                 });
             }
@@ -566,20 +569,19 @@ content.addEventListener('touchend', e => {
             } else {
                 myChart = new Chart(ctx, {
                     type: 'line',
-                    data: { labels: labels, datasets: [{ data: dataPoints, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0 }] },
+                    data: { labels: labels, datasets: [{ data: dataPoints, borderColor: '#3498db', fill: { value: 0, above: 'rgba(52, 152, 219, 0.15)', below: 'rgba(255, 80, 80, 0.15)' }, tension: 0 }] },
                     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: yConfig, x: xConfig } }
                 });
             }
         }
 
-        // ⑧ CSVファイル名はPachi収支で始まる
         function exportCSV() {
             let csv = "\uFEFF日付,回収金額,投資金額,収支,メモ\n";
             Object.keys(currentData).sort().forEach(k => {
                 const m = (currentData[k].memo || "").replace(/"/g, '""');
                 csv += `${k},${currentData[k].recovery || 0},${currentData[k].invest || 0},${currentData[k].amount || 0},"${m}"\n`;
             });
-            const fileName = `Pachi収支_${new Date().toISOString().slice(0,10)}.csv`;
+            const fileName = `パチ日記_${new Date().toISOString().slice(0,10)}.csv`;
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = fileName; link.click();
         }
@@ -665,16 +667,17 @@ if (cur) lines.push(cur);
 
         renderCalendar();
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('SW registered:', reg.scope))
-                    .catch(err => console.error('SW registration failed:', err));
-            });
-        }
-    </script>
+
 </body>
+
 </html>
+
+
+
+
+
+
+
+
 
 
