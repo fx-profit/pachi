@@ -170,7 +170,18 @@
         .clear-btn { background: var(--negative); color: white; }
         .hidden { display: none !important; }
 
-
+        /* ===== フッター注意書き ===== */
+        .backup-notice {
+            width: 100%;
+            max-width: 500px;
+            margin: 16px 0 24px 0;
+            padding: 12px 16px;
+            box-sizing: border-box;
+            background: #fff8e1;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #7a6000;
+            line-height: 1.6;
 
 
     </style>
@@ -689,8 +700,14 @@ if (cur) lines.push(cur);
 
         renderCalendar();
     </script>
-
+    <div class="container">
+        <div class="backup-notice">
+            データはお使いのブラウザ内にのみ保存されています。ブラウザのキャッシュをクリアすると、これまでの記録がすべて消去されてしまいます。<br>
+            万が一に備え、定期的なバックアップを強くおすすめします。
+        </div>
+    </div>
 </body>
 
 </html>
+
 
