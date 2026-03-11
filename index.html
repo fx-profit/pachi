@@ -536,8 +536,14 @@ content.addEventListener('touchend', e => {
             for (let m = 0; m < 12; m++) {
                 const monthSum = monthlyAmounts[m];
                 cumulative += monthSum;
+                const ymPrefix = `${targetYear}-${String(m + 1).padStart(2, '0')}`;
+                const hasData = Object.keys(currentData).some(k => k.startsWith(ymPrefix));
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${m + 1}月</td><td class="${monthSum < 0 ? 'negative' : ''}">${monthSum.toLocaleString()}</td><td class="${cumulative < 0 ? 'negative' : ''}">${cumulative.toLocaleString()}</td>`;
+                if (hasData) {
+                    row.innerHTML = `<td>${m + 1}月</td><td class="${monthSum < 0 ? 'negative' : ''}">${monthSum.toLocaleString()}</td><td class="${cumulative < 0 ? 'negative' : ''}">${cumulative.toLocaleString()}</td>`;
+                } else {
+                    row.innerHTML = `<td>${m + 1}月</td><td></td><td></td>`;
+                }
                 tbody.appendChild(row);
                 monthLabels.push(`${m + 1}月`);
                 cumPoints.push(cumulative);
