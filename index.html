@@ -194,7 +194,7 @@
         </div>
 
         <div class="action-group">
-            <button class="btn cum-btn" onclick="showCumulativeModal()">累計を表示</button>
+            <button class="btn cum-btn" onclick="showCumulativeModal()">年間累計を表示</button>
             <button class="btn graph-btn" onclick="showGraph()">グラフ表示</button>
             <button class="btn export-btn" onclick="exportCSV()">CSVバックアップ</button>
             <button class="btn import-btn" onclick="document.getElementById('importFile').click()">CSVから復元</button>
@@ -205,9 +205,9 @@
 <div id="modal" class="modal" onclick="if(event.target==this)saveData()">
     <div class="modal-content" id="modalContent">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <button onclick="shiftModalDate(-1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:var(--dark);">◀</button>
+            <button onclick="shiftModalDate(-1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:#ccc">◀</button>
             <h3 id="selectedDateText" style="margin:0; color:var(--dark);"></h3>
-            <button onclick="shiftModalDate(1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:var(--dark);">▶</button>
+            <button onclick="shiftModalDate(1)" style="background:none; border:none; font-size:1rem; cursor:pointer; padding:0 8px; color:#ccc">▶</button>
         </div>
 
             <div class="input-row">
@@ -238,7 +238,7 @@
 <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
     <div class="modal-content" style="max-width: 500px; position: relative;">
         <button onclick="document.getElementById('cumModal').style.display='none'" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:#999; line-height:1;">×</button>
-        <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">累計収支</h3>
+        <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">年間累計収支</h3>
             <table class="cum-table">
                 <thead>
                     <tr><th>月</th><th>月間収支</th><th>累計収支</th></tr>
@@ -508,7 +508,7 @@ content.addEventListener('touchend', e => {
 
         function showCumulativeModal() {
             const targetYear = viewDate.getFullYear();
-            document.getElementById('cumModalTitle').innerText = `${targetYear}年 累計収支`;
+            document.getElementById('cumModalTitle').innerText = `${targetYear} 年間収支`;
             const tbody = document.getElementById('cumTableBody'); tbody.innerHTML = "";
 
             const monthlyAmounts = new Array(12).fill(0);
@@ -671,6 +671,7 @@ if (cur) lines.push(cur);
 </body>
 
 </html>
+
 
 
 
