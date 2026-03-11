@@ -162,6 +162,7 @@
         .modal-btn { flex: 1; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; }
         .save-btn { background: var(--primary); color: white; }
         .cancel-btn { background: #eee; color: #333; }
+        .clear-btn { background: var(--negative); color: white; }
         .hidden { display: none !important; }
 
 
@@ -228,6 +229,7 @@
             
             <div class="btn-group">
                 <button class="modal-btn save-btn" onclick="saveData()">保存</button>
+                <button class="modal-btn clear-btn" onclick="clearModalData()">消去</button>
                 <button class="modal-btn cancel-btn" onclick="closeModal()">戻る</button>
             </div>
         </div>
@@ -238,7 +240,7 @@
 <div id="cumModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
     <div class="modal-content" style="max-width: 500px; position: relative;">
         <button onclick="document.getElementById('cumModal').style.display='none'" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:#999; line-height:1;">×</button>
-        <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">年間累計収支</h3>
+        <h3 style="margin-top:0; text-align:center;" id="cumModalTitle">年間収支</h3>
             <table class="cum-table">
                 <thead>
                     <tr><th>月</th><th>月間収支</th><th>累計収支</th></tr>
@@ -418,6 +420,15 @@ for (let i = 0; i < remainingCells; i++) {
 
         function closeModal() { 
             document.getElementById('modal').style.display = 'none'; 
+        }
+
+        function clearModalData() {
+            if (!confirm('この日のデータを消去しますか？')) return;
+            delete currentData[selectedDateKey];
+            invalidateSummaryCache(selectedDateKey);
+            localStorage.setItem('fx_data_pro', JSON.stringify(currentData));
+            closeModal();
+            renderCalendar();
         }
 
 function shiftModalDate(diff) {
@@ -671,14 +682,3 @@ if (cur) lines.push(cur);
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
