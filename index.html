@@ -120,6 +120,7 @@
         
         .small-font { font-size: 0.7rem !important; }
         .negative { color: var(--negative) !important; }
+        .positive { color: var(--positive) !important; }
 
         .summary { margin-top: 12px; background: #FFF; color: #000; padding: 12px; border-radius: 12px; border:solid 1px #f8f9fa;width: 100%; max-width: 500px; display: flex; justify-content: center; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1)}
         .summary-item { text-align: center; flex: 1; }
@@ -530,7 +531,7 @@ content.addEventListener('touchend', e => {
             }
             const { amount: tA } = summaryCache[ym];
             const aEl = document.getElementById('totalAmount');
-            aEl.innerText = `¥${tA.toLocaleString()}`; aEl.className = `summary-value ${tA < 0 ? 'negative' : ''}`;
+            aEl.innerText = `¥${tA.toLocaleString()}`; aEl.className = `summary-value ${tA < 0 ? 'negative' : tA > 0 ? 'positive' : ''}`;
         }
 
         function showCumulativeModal() {
@@ -709,5 +710,4 @@ if (cur) lines.push(cur);
 </body>
 
 </html>
-
 
