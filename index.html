@@ -147,6 +147,7 @@
         .cum-table th, .cum-table td { border: 1px solid #ddd; padding: 4px; text-align: center; }
         .cum-table th { background: #f8f9fa; }
         .cum-table td:first-child { background: #f8f9fa;}
+        .cum-table td:not(:first-child) { font-weight: bold; }
 
         input, textarea { width: 100%; padding: 12px; margin: 5px 0 12px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; appearance: none; font-family: inherit; background: #fff; }
         input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
@@ -557,7 +558,7 @@ content.addEventListener('touchend', e => {
                 const hasData = Object.keys(currentData).some(k => k.startsWith(ymPrefix));
                 const row = document.createElement('tr');
                 if (hasData) {
-                    row.innerHTML = `<td>${m + 1}月</td><td class="${monthSum < 0 ? 'negative' : ''}">${monthSum.toLocaleString()}</td><td class="${cumulative < 0 ? 'negative' : ''}">${cumulative.toLocaleString()}</td>`;
+                    row.innerHTML = `<td>${m + 1}月</td><td class="${monthSum < 0 ? 'negative' : monthSum > 0 ? 'positive' : ''}">${monthSum.toLocaleString()}</td><td class="${cumulative < 0 ? 'negative' : cumulative > 0 ? 'positive' : ''}">${cumulative.toLocaleString()}</td>`;
                 } else {
                     row.innerHTML = `<td>${m + 1}月</td><td></td><td></td>`;
                 }
