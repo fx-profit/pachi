@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -117,7 +118,7 @@
             align-items: flex-start;
             z-index: 1000;
             padding: 15px;
-            padding-top: calc(env(safe-area-inset-top, 0px) + 60px);
+            padding-top: calc(env(safe-area-inset-top, 0px) + 30px);
             box-sizing: border-box;
         }
         #jumpContent {
@@ -407,7 +408,7 @@
             padding: 4px 10px;
             position: absolute;
             right: 10px;
-            top: 50%;
+            top: 55%;
             transform: translateY(-50%);
             font-size: 1.3rem;
             color: white;
@@ -423,13 +424,82 @@
             padding: 4px 10px;
             position: absolute;
             left: 10px;
-            top: 50%;
+            top: 55%;
             transform: translateY(-50%);
             font-size: 1.3rem;
             color: white;
             opacity: 0.85;
         }
         #searchBtn:active { opacity: 0.5; }
+
+        /* ===== リスト表示ボタン ===== */
+        #listBtn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 10px;
+            position: absolute;
+            left: 48px;
+            top: 55%;
+            transform: translateY(-50%);
+            color: white;
+            opacity: 0.85;
+        }
+        #listBtn:active { opacity: 0.5; }
+
+        /* ===== リスト表示モーダル ===== */
+        #listModal .modal-content { max-width: 400px; }
+        .list-results {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .list-result-item {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: #fafafa;
+            cursor: pointer;
+        }
+        .list-result-item:hover { background: #f0f4ff; }
+        .list-result-date {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+        .list-result-amounts {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 4px;
+        }
+        .list-result-recovery {
+            font-size: 0.85rem;
+            color: var(--positive);
+            font-weight: bold;
+        }
+        .list-result-invest {
+            font-size: 0.85rem;
+            color: var(--negative);
+            font-weight: bold;
+        }
+        .list-result-balance {
+            font-size: 0.88rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .list-result-memo {
+            font-size: 0.82rem;
+            color: #666;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .list-no-result {
+            text-align: center;
+            color: #aaa;
+            padding: 20px 0;
+            font-size: 0.9rem;
+        }
 
         /* ===== 検索モーダル ===== */
         #searchModal .modal-content { max-width: 400px; }
@@ -522,6 +592,12 @@
         <button id="searchBtn" onclick="openSearchModal()" title="検索">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+            </svg>
+        </button>
+        <button id="listBtn" onclick="openListModal()" title="リスト表示">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
             </svg>
         </button>
         <h1 id="appTitle" contenteditable="true" spellcheck="false">パチ日記</h1>
@@ -623,7 +699,7 @@
             </div>
             <div class="btn-group">
                 <button class="modal-btn save-btn" onclick="doJump()">移動</button>
-                <button class="modal-btn cancel-btn" onclick="closeJumpModal()">キャンセル</button>
+                <button class="modal-btn cancel-btn" onclick="goToCurrentMonth()">今月に戻る</button>
             </div>
         </div>
     </div>
@@ -676,6 +752,18 @@
             <div class="search-results" id="searchResults"></div>
         </div>
     </div><!-- /#searchModal -->
+
+    <!-- ========== リスト表示モーダル ========== -->
+    <div id="listModal" class="modal" onclick="if(event.target==this)closeListModal()">
+        <div class="modal-content">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <h3 id="listModalTitle" style="margin:0; color:var(--dark);">記録一覧</h3>
+                <button onclick="closeListModal()"
+                        style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#999; line-height:1;">×</button>
+            </div>
+            <div class="list-results" id="listResults"></div>
+        </div>
+    </div><!-- /#listModal -->
 
 
     <!-- ========== JavaScript ========== -->
@@ -1251,24 +1339,79 @@
                 const d = currentData[k];
                 const parts = k.split('-');
                 const dateLabel = `${parseInt(parts[0])}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
-                const recovery = (d.recovery || 0).toLocaleString();
-                const invest   = (d.invest   || 0).toLocaleString();
+                const balance  = (d.recovery || 0) - (d.invest || 0);
+                const balanceStr = balance.toLocaleString();
+                const isNeg    = balance < 0;
                 const memo     = d.memo ? d.memo.trim() : '';
 
                 const item = document.createElement('div');
                 item.className = 'search-result-item';
                 item.innerHTML = `
                     <div class="search-result-date">${dateLabel}</div>
-                    <div class="search-result-amounts">
-                        <span class="search-result-recovery">回収 ¥${recovery}</span>
-                        <span class="search-result-invest">投資 ¥${invest}</span>
-                    </div>
+                    <div class="search-result-amount" style="color:${isNeg ? 'var(--negative)' : 'var(--positive)'}; font-size:0.88rem; font-weight:bold; margin-bottom:4px;">¥${balanceStr}</div>
                     ${memo ? `<div class="search-result-memo">${memo.replace(/</g,'&lt;')}</div>` : ''}
                 `;
                 // タップするとその日のモーダルを開く
                 item.onclick = () => {
                     closeSearchModal();
                     // 表示月をその日付に移動してからモーダルを開く
+                    const d2 = new Date(k);
+                    viewDate = new Date(d2.getFullYear(), d2.getMonth(), 1);
+                    renderCalendar();
+                    openModal(k);
+                };
+                container.appendChild(item);
+            });
+        }
+
+        // ===== リスト表示機能 =====
+        function openListModal() {
+            const y = viewDate.getFullYear();
+            const m = viewDate.getMonth() + 1;
+            document.getElementById('listModalTitle').textContent = `${y}年${m}月の記録`;
+            document.getElementById('listModal').style.display = 'flex';
+            renderListResults();
+        }
+
+        function closeListModal() {
+            document.getElementById('listModal').style.display = 'none';
+        }
+
+        function renderListResults() {
+            const container = document.getElementById('listResults');
+            container.innerHTML = '';
+
+            const y = viewDate.getFullYear();
+            const m = String(viewDate.getMonth() + 1).padStart(2, '0');
+            const prefix = `${y}-${m}-`;
+
+            const keys = Object.keys(currentData)
+                .filter(k => k.startsWith(prefix))
+                .sort((a, b) => a.localeCompare(b));
+
+            if (keys.length === 0) {
+                container.innerHTML = '<div class="list-no-result">この月の記録はありません</div>';
+                return;
+            }
+
+            keys.forEach(k => {
+                const d = currentData[k];
+                const parts = k.split('-');
+                const dateLabel = `${parseInt(parts[0])}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+                const balance  = (d.recovery || 0) - (d.invest || 0);
+                const balanceStr = balance.toLocaleString();
+                const isNeg    = balance < 0;
+                const memo     = d.memo ? d.memo.trim() : '';
+
+                const item = document.createElement('div');
+                item.className = 'list-result-item';
+                item.innerHTML = `
+                    <div class="list-result-date">${dateLabel}</div>
+                    <div class="list-result-balance" style="color:${isNeg ? 'var(--negative)' : 'var(--positive)'}">¥${balanceStr}</div>
+                    ${memo ? `<div class="list-result-memo">${memo.replace(/</g,'&lt;')}</div>` : ''}
+                `;
+                item.onclick = () => {
+                    closeListModal();
                     const d2 = new Date(k);
                     viewDate = new Date(d2.getFullYear(), d2.getMonth(), 1);
                     renderCalendar();
@@ -1308,12 +1451,86 @@
             document.getElementById('jumpModal').style.display = 'none';
         }
 
+        function goToCurrentMonth() {
+            const today = new Date();
+            const targetYear  = today.getFullYear();
+            const targetMonth = today.getMonth();
+
+            // すでに今月なら閉じるだけ
+            if (viewDate.getFullYear() === targetYear && viewDate.getMonth() === targetMonth) {
+                closeJumpModal();
+                return;
+            }
+
+            closeJumpModal();
+
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const containerWidth = swipeArea.offsetWidth;
+            // 今月が未来なら左へ、過去なら右へスライドアウト
+            const goingForward = new Date(targetYear, targetMonth, 1) > viewDate;
+            const exitX = goingForward ? -containerWidth : containerWidth;
+
+            // スライドアウト
+            grid.classList.add('is-animating');
+            grid.style.transform = `translateX(${exitX}px)`;
+            grid.style.opacity   = '0';
+
+            setTimeout(() => {
+                grid.classList.remove('is-animating');
+                grid.style.transform = `translateX(${-exitX}px)`;
+                viewDate = new Date(targetYear, targetMonth, 1);
+                requestAnimationFrame(() => {
+                    renderCalendar();
+                    requestAnimationFrame(() => {
+                        grid.classList.add('is-animating');
+                        grid.style.transform = 'translateX(0)';
+                        grid.style.opacity   = '1';
+                        setTimeout(() => { isAnimating = false; }, 300);
+                    });
+                });
+            }, 300);
+        }
+
         function doJump() {
             const y = parseInt(document.getElementById('jumpYear').value);
             const m = parseInt(document.getElementById('jumpMonth').value);
-            viewDate = new Date(y, m - 1, 1);
+            const target = new Date(y, m - 1, 1);
+
+            // 同じ年月なら閉じるだけ
+            if (viewDate.getFullYear() === y && viewDate.getMonth() === m - 1) {
+                closeJumpModal();
+                return;
+            }
+
             closeJumpModal();
-            renderCalendar();
+
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const containerWidth = swipeArea.offsetWidth;
+            const goingForward   = target > viewDate;
+            const exitX          = goingForward ? -containerWidth : containerWidth;
+
+            grid.classList.add('is-animating');
+            grid.style.transform = `translateX(${exitX}px)`;
+            grid.style.opacity   = '0';
+
+            setTimeout(() => {
+                grid.classList.remove('is-animating');
+                grid.style.transform = `translateX(${-exitX}px)`;
+                viewDate = target;
+                requestAnimationFrame(() => {
+                    renderCalendar();
+                    requestAnimationFrame(() => {
+                        grid.classList.add('is-animating');
+                        grid.style.transform = 'translateX(0)';
+                        grid.style.opacity   = '1';
+                        setTimeout(() => { isAnimating = false; }, 300);
+                    });
+                });
+            }, 300);
         }
 
         // ===== 初期描画 =====
